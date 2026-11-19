@@ -5,22 +5,24 @@ from typing import Dict, Any, List
 from models import EvidenceAnalysisRequest, ScamShieldAnalysisResponse, ExtractedEntity
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-# Low-end fast models for testing: gemini-2.0-flash, gemini-1.5-flash-8b, or gemini-1.5-flash
-DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+CANDIDATE_MODELS = [
+    os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+    "gemma-4-31b-it",
+    "gemini-2.5-flash",
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+]
 
 def analyze_with_gemini(req: EvidenceAnalysisRequest) -> ScamShieldAnalysisResponse:
     """
-    AI-powered Multimodal Evidence Analysis using Gemini Flash.
+    AI-powered Multimodal Evidence Analysis using Gemini / Gemma Flash models.
     Extracts urgency indicators, threat patterns, and financial entities.
     """
-    # If API key is present, attempt live Gemini call
-    if GEMINI_API_KEY and GEMINI_API_KEY != "your_gemini_api_key_here":
+    key = os.getenv("GEMINI_API_KEY", GEMINI_API_KEY)
+    if key and key != "your_gemini_api_key_here":
         try:
-            import google.generativeai as genai
-            genai.configure(api_key=GEMINI_API_KEY)
-            
-            # Select flash model
-            model = genai.GenerativeModel(DEFAULT_MODEL)
+            from google import genai
+            client = genai.Client(api_key=key)
 
             system_prompt = """
 You are SENTINEL's ScamShield AI Engine, specialized in financial cyber threat analysis, Business Email Compromise (BEC), invoice fraud, and supplier payment redirection attacks.
@@ -52,44 +54,50 @@ Do not include any markdown fences or extraneous text outside the JSON object.
             if req.subject:
                 full_prompt += f"Subject: {req.subject}\n"
 
-            response = model.generate_content(full_prompt)
-            raw_text = response.text.strip()
-            # Remove any backtick fences if returned
-            if raw_text.startswith("```json"):
-                raw_text = raw_text[7:]
-            if raw_text.startswith("```"):
-                raw_text = raw_text[3:]
-            if raw_text.endswith("```"):
-                raw_text = raw_text[:-3]
+            for model_name in CANDIDATE_MODELS:
+                try:
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=full_prompt
+                    )
+                    raw_text = response.text.strip()
+                    if raw_text.startswith("```json"):
+                        raw_text = raw_text[7:]
+                    if raw_text.startswith("```"):
+                        raw_text = raw_text[3:]
+                    if raw_text.endswith("```"):
+                        raw_text = raw_text[:-3]
 
-            parsed = json.loads(raw_text.strip())
+                    parsed = json.loads(raw_text.strip())
 
-            entities = [
-                ExtractedEntity(
-                    name=e.get("name", "Unknown"),
-                    type=e.get("type", "ORG"),
-                    confidence=float(e.get("confidence", 0.9)),
-                    risk_score=int(e.get("risk_score", 50))
-                )
-                for e in parsed.get("extracted_entities", [])
-            ]
+                    entities = [
+                        ExtractedEntity(
+                            name=e.get("name", "Unknown"),
+                            type=e.get("type", "ORG"),
+                            confidence=float(e.get("confidence", 0.9)),
+                            risk_score=int(e.get("risk_score", 50))
+                        )
+                        for e in parsed.get("extracted_entities", [])
+                    ]
 
-            return ScamShieldAnalysisResponse(
-                threat_detected=bool(parsed.get("threat_detected", True)),
-                threat_category=parsed.get("threat_category", "BEC"),
-                severity=parsed.get("severity", "HIGH"),
-                confidence_score=float(parsed.get("confidence_score", 0.95)),
-                summary=parsed.get("summary", "Automated AI threat analysis completed."),
-                urgency_indicators=parsed.get("urgency_indicators", []),
-                coercion_tactics=parsed.get("coercion_tactics", []),
-                extracted_entities=entities,
-                recommended_action=parsed.get("recommended_action", "Hold wire release and perform out-of-band supplier verification."),
-                model_used=DEFAULT_MODEL
-            )
+                    return ScamShieldAnalysisResponse(
+                        threat_detected=bool(parsed.get("threat_detected", True)),
+                        threat_category=parsed.get("threat_category", "BEC"),
+                        severity=parsed.get("severity", "HIGH"),
+                        confidence_score=float(parsed.get("confidence_score", 0.95)),
+                        summary=parsed.get("summary", "Automated AI threat analysis completed."),
+                        urgency_indicators=parsed.get("urgency_indicators", []),
+                        coercion_tactics=parsed.get("coercion_tactics", []),
+                        extracted_entities=entities,
+                        recommended_action=parsed.get("recommended_action", "Hold wire release and perform out-of-band supplier verification."),
+                        model_used=model_name
+                    )
+                except Exception as model_err:
+                    continue
         except Exception as e:
-            print(f"Gemini API call notice, falling back to heuristic engine: {e}")
+            print(f"Gemini client notice: {e}")
 
-    # Robust Built-in Heuristic Analysis Engine (Guarantees zero downtime / works without API key)
+    # Fallback to deterministic heuristic rule engine if models are busy or offline
     return heuristic_threat_analysis(req)
 
 
