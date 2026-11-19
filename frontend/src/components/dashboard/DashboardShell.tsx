@@ -317,6 +317,9 @@ export function DashboardShell() {
           onToggleStar={() => setIsStarred(!isStarred)}
           isStarred={isStarred}
           onOpenQuickCreate={() => handleOpenQuickCreate()}
+          suppliers={suppliers}
+          evidenceList={evidenceList}
+          entities={entities}
         />
       )}
 

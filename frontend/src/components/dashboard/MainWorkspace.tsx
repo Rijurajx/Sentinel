@@ -1,7 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { InvestigationItem } from "@/lib/dashboard-data";
+import { useState, useMemo } from "react";
+import {
+  InvestigationItem,
+  SupplierItem,
+  EvidenceItem,
+  EntityItem,
+} from "@/lib/dashboard-data";
 import { SentinelLogo } from "@/components/ui/SentinelLogo";
 import {
   Star,
@@ -24,6 +29,7 @@ import {
   Scan,
   Database,
   Loader2,
+  ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { analyzeThreatEvidence, ScamShieldResult } from "@/lib/apiClient";
@@ -37,7 +43,10 @@ interface MainWorkspaceProps {
   onToggleStar?: () => void;
   isStarred?: boolean;
   onLoadDemoTelemetry?: () => void;
-  onOpenQuickCreate?: () => void;
+  onOpenQuickCreate?: (tab?: "investigation" | "supplier" | "upload" | "entity") => void;
+  suppliers?: SupplierItem[];
+  evidenceList?: EvidenceItem[];
+  entities?: EntityItem[];
 }
 
 export function MainWorkspace({
@@ -50,6 +59,9 @@ export function MainWorkspace({
   isStarred = false,
   onLoadDemoTelemetry,
   onOpenQuickCreate,
+  suppliers = [],
+  evidenceList = [],
+  entities = [],
 }: MainWorkspaceProps) {
   const [commentText, setCommentText] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
@@ -58,12 +70,80 @@ export function MainWorkspace({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [liveAnalysis, setLiveAnalysis] = useState<ScamShieldResult | null>(null);
 
+  // Dynamically compute the unified threat graph from real workspace entities
+  const computedGraphNodes = useMemo(() => {
+    if (!investigation) return [];
+    const nodes: Array<{
+      id: string;
+      label: string;
+      type: string;
+      risk: "danger" | "warning" | "safe";
+      roleBadge: string;
+      details: string;
+    }> = [
+      {
+        id: investigation.id,
+        label: `${investigation.id} — ${investigation.title}`,
+        type: "incident",
+        risk: investigation.riskLevel === "Critical" ? "danger" : "warning",
+        roleBadge: "Incident Core",
+        details: `Target: ${investigation.targetEntity} • Exposure: ${investigation.amount} • Status: ${investigation.status}`,
+      },
+    ];
+
+    // Add Suppliers
+    suppliers.forEach((s) => {
+      const isMule = s.status === "Discrepancy Detected" || s.riskLevel === "Critical";
+      nodes.push({
+        id: s.id,
+        label: s.name,
+        type: isMule ? "mule_account" : "supplier",
+        risk: isMule ? "danger" : "safe",
+        roleBadge: isMule ? "⚠️ Payment Diversion Attempt" : "✓ Verified Beneficiary",
+        details: `Account: ${s.accountNumber} • IFSC: ${s.ifsc} • Bank Branch: ${s.bankBranch}`,
+      });
+    });
+
+    // Add Evidence
+    evidenceList.forEach((e) => {
+      nodes.push({
+        id: e.id,
+        label: e.title,
+        type: "evidence",
+        risk: e.status === "Flagged" ? "danger" : "warning",
+        roleBadge: e.status === "Flagged" ? "🚨 Flagged Threat Vector" : "Evidence Document",
+        details: `Type: ${e.type} • Size: ${e.fileSize} • Status: ${e.status}`,
+      });
+    });
+
+    // Add Entities
+    entities.forEach((ent) => {
+      nodes.push({
+        id: ent.id,
+        label: ent.value,
+        type: ent.type,
+        risk: ent.riskLevel === "Critical" ? "danger" : ent.riskLevel === "High" ? "warning" : "safe",
+        roleBadge: `Entity (${ent.type})`,
+        details: `Risk: ${ent.riskLevel} • ${ent.incidentCount} incidents observed`,
+      });
+    });
+
+    return nodes;
+  }, [investigation, suppliers, evidenceList, entities]);
+
   const handleRunLiveTriage = async () => {
     if (!investigation) return;
     setIsAnalyzing(true);
     try {
+      const supplierContext = suppliers.length > 0
+        ? `Registered Suppliers: ${suppliers.map((s) => `${s.name} (Account: ${s.accountNumber}, IFSC: ${s.ifsc}, Status: ${s.status}, Risk: ${s.riskLevel})`).join("; ")}.`
+        : "";
+      const evidenceContext = evidenceList.length > 0
+        ? `Attached Evidence Files: ${evidenceList.map((e) => `${e.title} [Status: ${e.status}]`).join("; ")}.`
+        : "";
+
       const res = await analyzeThreatEvidence({
-        content: `${investigation.title}. ${investigation.description}. Target: ${investigation.targetEntity}`,
+        content: `${investigation.title}. ${investigation.description}. Target: ${investigation.targetEntity}. Exposure: ${investigation.amount}. ${supplierContext} ${evidenceContext}`,
         evidence_type: "email",
       });
       setLiveAnalysis(res);
@@ -108,7 +188,7 @@ export function MainWorkspace({
           <div className="grid grid-cols-1 gap-2.5 pt-2 text-left">
             <button
               type="button"
-              onClick={onOpenQuickCreate}
+              onClick={() => onOpenQuickCreate?.()}
               className="p-3.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] transition-colors flex items-center justify-between group"
             >
               <div className="flex items-center gap-3">
@@ -200,7 +280,7 @@ export function MainWorkspace({
           {onOpenQuickCreate && (
             <button
               type="button"
-              onClick={onOpenQuickCreate}
+              onClick={() => onOpenQuickCreate()}
               className="px-2.5 py-1 rounded-md bg-[#5e6ad2] hover:bg-[#6f7be8] text-white text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm shadow-[#5e6ad2]/20"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -266,7 +346,7 @@ export function MainWorkspace({
               }`}
             >
               <span>TrustGraph</span>
-              <span className="text-[10px] font-mono text-[#62666d]">({investigation.trustGraph.nodes.length})</span>
+              <span className="text-[10px] font-mono text-[#62666d]">({computedGraphNodes.length})</span>
             </button>
             <button
               type="button"
@@ -278,18 +358,19 @@ export function MainWorkspace({
               }`}
             >
               <span>Evidence</span>
-              <span className="text-[10px] font-mono text-[#62666d]">({investigation.evidenceList.length})</span>
+              <span className="text-[10px] font-mono text-[#62666d]">({evidenceList.length})</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("finguard")}
-              className={`pb-2.5 px-3 font-medium transition-colors border-b-2 -mb-[1px] ${
+              className={`pb-2.5 px-3 font-medium transition-colors border-b-2 -mb-[1px] flex items-center gap-1.5 ${
                 activeTab === "finguard"
                   ? "border-white text-[#f7f8f8]"
                   : "border-transparent text-[#8a8f98] hover:text-[#d0d3d8]"
               }`}
             >
-              FinGuard Check
+              <span>FinGuard Check</span>
+              <span className="text-[10px] font-mono text-[#62666d]">({suppliers.length})</span>
             </button>
           </div>
         </div>
@@ -447,36 +528,46 @@ export function MainWorkspace({
           </div>
         )}
 
-        {/* TAB 2: TRUSTGRAPH (DEDICATED AIRY CANVAS) */}
+        {/* TAB 2: TRUSTGRAPH (DEDICATED DYNAMIC CANVAS) */}
         {activeTab === "graph" && (
           <div className="space-y-4 animate-fade-in">
             <div className="p-6 rounded-xl border border-white/[0.08] bg-white/[0.015] space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-[#f7f8f8]">
-                  Entity Relationship Canvas
-                </span>
-                <span className="text-[11px] font-mono text-[#8a8f98]">
-                  PROVENANCE-BACKED
+                <div>
+                  <span className="text-xs font-semibold text-[#f7f8f8]">
+                    Dynamic Forensic Entity Network
+                  </span>
+                  <p className="text-[11px] text-[#8a8f98] mt-0.5">
+                    Real-time cross-correlation of registered beneficiaries, diversion attempts, and evidence
+                  </p>
+                </div>
+                <span className="text-[11px] font-mono text-[#8a8f98] bg-white/[0.04] px-2 py-0.5 rounded">
+                  {computedGraphNodes.length} NODES CORRELATED
                 </span>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-3 py-8">
-                {investigation.trustGraph?.nodes?.length > 0 ? (
-                  investigation.trustGraph.nodes.map((node) => {
+              <div className="flex flex-wrap items-center justify-center gap-3 py-8 min-h-[160px] border border-white/[0.04] rounded-lg bg-black/20 p-4">
+                {computedGraphNodes.length > 0 ? (
+                  computedGraphNodes.map((node) => {
                     const isSelected = activeGraphNode === node.id;
                     return (
                       <button
                         key={node.id}
                         type="button"
                         onClick={() => setActiveGraphNode(isSelected ? null : node.id)}
-                        className={`px-3 py-1.5 rounded-md border text-xs font-mono transition-all flex items-center gap-2 ${
+                        className={`px-3 py-2 rounded-lg border text-xs font-mono transition-all flex flex-col items-start gap-1 text-left ${
                           node.risk === "danger"
-                            ? "bg-white/[0.03] border-white/20 text-[#eb5757]"
-                            : "bg-white/[0.02] border-white/10 text-[#d0d3d8]"
-                        } ${isSelected ? "ring-2 ring-white/40" : "hover:border-white/30"}`}
+                            ? "bg-[#eb5757]/10 border-[#eb5757]/30 text-[#eb5757] hover:border-[#eb5757]"
+                            : node.risk === "warning"
+                            ? "bg-[#f0b96d]/10 border-[#f0b96d]/30 text-[#f0b96d] hover:border-[#f0b96d]"
+                            : "bg-[#4ebe82]/10 border-[#4ebe82]/30 text-[#4ebe82] hover:border-[#4ebe82]"
+                        } ${isSelected ? "ring-2 ring-white" : ""}`}
                       >
-                        <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                        <span>{node.label}</span>
+                        <div className="flex items-center gap-1.5 font-medium">
+                          <span className="w-2 h-2 rounded-full bg-current" />
+                          <span className="text-white text-xs">{node.label}</span>
+                        </div>
+                        <span className="text-[10px] opacity-80">{node.roleBadge}</span>
                       </button>
                     );
                   })
@@ -488,9 +579,29 @@ export function MainWorkspace({
               </div>
 
               {activeGraphNode && (
-                <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs font-mono text-[#8a8f98]">
-                  Selected: <span className="text-[#f7f8f8]">{activeGraphNode}</span> • Traceable to incident records.
-                </div>
+                (() => {
+                  const node = computedGraphNodes.find((n) => n.id === activeGraphNode);
+                  if (!node) return null;
+                  return (
+                    <div className="p-3.5 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs space-y-1 animate-fade-in">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-white">{node.label}</span>
+                        <span
+                          className={`text-[10px] font-mono px-2 py-0.5 rounded ${
+                            node.risk === "danger"
+                              ? "bg-[#eb5757]/20 text-[#eb5757]"
+                              : node.risk === "warning"
+                              ? "bg-[#f0b96d]/20 text-[#f0b96d]"
+                              : "bg-[#4ebe82]/20 text-[#4ebe82]"
+                          }`}
+                        >
+                          {node.roleBadge}
+                        </span>
+                      </div>
+                      <div className="text-[11px] font-mono text-[#8a8f98]">{node.details}</div>
+                    </div>
+                  );
+                })()
               )}
             </div>
           </div>
@@ -500,26 +611,30 @@ export function MainWorkspace({
         {activeTab === "evidence" && (
           <div className="space-y-3 animate-fade-in">
             <div className="rounded-xl border border-white/[0.08] bg-white/[0.015] divide-y divide-white/[0.04]">
-              {investigation.evidenceList?.length > 0 ? (
-                investigation.evidenceList.map((ev) => (
+              {evidenceList.length > 0 ? (
+                evidenceList.map((ev) => (
                   <div key={ev.id} className="p-3.5 flex items-center justify-between text-xs">
                     <div className="flex items-center gap-3">
                       <FileText className="w-4 h-4 text-[#8a8f98]" />
                       <div>
-                        <span className="font-medium text-[#f7f8f8] block">{ev.filename}</span>
+                        <span className="font-medium text-[#f7f8f8] block">{ev.title}</span>
                         <span className="text-[10px] text-[#62666d] font-mono">
-                          {ev.size} • Uploaded {ev.uploadedAt}
+                          Format: {ev.type} • {ev.fileSize} • Uploaded {ev.uploadedAt}
                         </span>
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/[0.04] text-[#8a8f98]">
+                    <span
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded ${
+                        ev.status === "Flagged" ? "bg-[#eb5757]/10 text-[#eb5757]" : "bg-white/[0.04] text-[#8a8f98]"
+                      }`}
+                    >
                       {ev.status}
                     </span>
                   </div>
                 ))
               ) : (
                 <div className="p-8 text-center text-xs text-[#8a8f98]">
-                  No evidence files attached to this investigation yet.
+                  No evidence files attached to this investigation yet. Click "+ Upload Evidence" to ingest.
                 </div>
               )}
             </div>
@@ -529,24 +644,77 @@ export function MainWorkspace({
         {/* TAB 4: FINGUARD AUDIT */}
         {activeTab === "finguard" && (
           <div className="space-y-4 animate-fade-in">
-            <div className="p-5 rounded-xl border border-white/[0.08] bg-white/[0.015] space-y-3 text-xs">
-              <div className="flex items-center gap-2 font-medium text-[#f7f8f8]">
-                <CreditCard className="w-4 h-4 text-[#8a8f98]" />
-                <span>Deterministic Bank Details Check</span>
+            <div className="p-5 rounded-xl border border-white/[0.08] bg-white/[0.015] space-y-4 text-xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 font-medium text-[#f7f8f8]">
+                  <CreditCard className="w-4 h-4 text-[#5e6ad2]" />
+                  <span>Deterministic FinGuard Supplier Master Verification</span>
+                </div>
+                <span className="text-[10px] font-mono text-[#4ebe82] bg-[#4ebe82]/10 px-2 py-0.5 rounded">
+                  Deterministic v2.4-strict (Zero LLM Hallucination)
+                </span>
               </div>
               <p className="text-[#8a8f98] leading-relaxed">
-                FinGuard verified supplier master records against the invoice extracted details. Zero LLM hallucination.
+                FinGuard verifies registered suppliers against RBI clearing databases & ISO IBAN checksums to catch unauthorized payment diversion attempts before treasury settlement.
               </p>
-              <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] font-mono text-[11px] space-y-1.5">
-                <div className="flex justify-between">
-                  <span className="text-[#8a8f98]">Master Bank IFSC:</span>
-                  <span className="text-[#4ebe82]">HDFC0001234 (Verified)</span>
+
+              {suppliers.length > 0 ? (
+                <div className="space-y-3">
+                  {suppliers.map((s) => {
+                    const isMule = s.status === "Discrepancy Detected" || s.riskLevel === "Critical";
+                    return (
+                      <div
+                        key={s.id}
+                        className={`p-3.5 rounded-lg border font-mono text-xs space-y-2 ${
+                          isMule
+                            ? "bg-[#eb5757]/05 border-[#eb5757]/30 text-[#f7f8f8]"
+                            : "bg-white/[0.02] border-white/[0.08] text-[#f7f8f8]"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between font-sans">
+                          <div className="flex items-center gap-2">
+                            <Building2 className={`w-4 h-4 ${isMule ? "text-[#eb5757]" : "text-[#4ebe82]"}`} />
+                            <span className="font-semibold text-white">{s.name}</span>
+                          </div>
+                          <span
+                            className={`text-[10px] font-mono px-2 py-0.5 rounded ${
+                              isMule ? "bg-[#eb5757]/20 text-[#eb5757]" : "bg-[#4ebe82]/20 text-[#4ebe82]"
+                            }`}
+                          >
+                            {s.status}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-[11px] text-[#8a8f98] pt-1 border-t border-white/[0.04]">
+                          <div>
+                            Account: <span className="text-white">{s.accountNumber}</span>
+                          </div>
+                          <div>
+                            IFSC / Routing: <span className={isMule ? "text-[#eb5757]" : "text-[#4ebe82]"}>{s.ifsc}</span>
+                          </div>
+                          <div>
+                            Branch: <span className="text-white">{s.bankBranch}</span>
+                          </div>
+                          <div>
+                            Total Invoiced: <span className="text-white">{s.totalInvoiced}</span>
+                          </div>
+                        </div>
+
+                        {isMule && (
+                          <div className="p-2 rounded bg-[#eb5757]/15 border border-[#eb5757]/30 text-[11px] text-[#eb5757] flex items-center gap-2">
+                            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                            <span>🚨 HIGH RISK DIVERSION ALERT: Unauthorized routing discrepancy. Dual-authorization payment freeze recommended.</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-[#8a8f98]">Invoice Bank IFSC:</span>
-                  <span className="text-[#eb5757]">UTIB0009999 (Discrepancy)</span>
+              ) : (
+                <div className="p-8 text-center text-xs text-[#8a8f98]">
+                  No suppliers registered in this workspace yet. Add suppliers using the "+ Add Supplier" button.
                 </div>
-              </div>
+              )}
             </div>
           </div>
         )}

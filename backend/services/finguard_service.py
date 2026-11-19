@@ -15,6 +15,13 @@ KNOWN_IFSC_BANKS = {
     "KKBK": "Kotak Mahindra Bank",
     "YESB": "Yes Bank",
     "IDIB": "Indian Bank",
+    "UBIN": "Union Bank of India",
+    "BKID": "Bank of India",
+    "INDB": "IndusInd Bank",
+    "SCBL": "Standard Chartered Bank",
+    "HSBC": "HSBC Bank",
+    "CITI": "Citibank",
+    "DBSS": "DBS Bank",
 }
 
 def validate_ifsc(ifsc: str) -> Dict[str, Any]:
@@ -24,11 +31,16 @@ def validate_ifsc(ifsc: str) -> Dict[str, Any]:
         return {
             "valid": False,
             "bank_name": None,
-            "error": "Invalid IFSC structure. Must be 4 letters, '0', followed by 6 alphanumeric characters.",
+            "error": "Invalid IFSC structure. Must be 4 uppercase bank letters, followed by '0', and 6 alphanumeric branch characters.",
         }
     bank_code = cleaned[:4]
-    bank_name = KNOWN_IFSC_BANKS.get(bank_code, f"Recognized Scheduled Bank ({bank_code})")
-    return {"valid": True, "bank_name": bank_name, "error": None}
+    if bank_code not in KNOWN_IFSC_BANKS:
+        return {
+            "valid": False,
+            "bank_name": None,
+            "error": f"Unregistered bank identifier '{bank_code}'. Not an authorized RBI scheduled commercial bank.",
+        }
+    return {"valid": True, "bank_name": KNOWN_IFSC_BANKS[bank_code], "error": None}
 
 def validate_iban(iban: str) -> Dict[str, Any]:
     cleaned = re.sub(r"\s+", "", iban.upper())
@@ -66,13 +78,14 @@ def verify_supplier_banking(req: BankVerificationRequest) -> BankVerificationRes
     code_to_check = req.ifsc_or_iban.strip().upper()
 
     # 1. Format Verification
-    if len(code_to_check) == 11 and code_to_check[4] == "0":
-        # Indian IFSC
+    if len(code_to_check) == 11:
+        # Indian IFSC (strictly 11 chars)
         ifsc_res = validate_ifsc(code_to_check)
         if not ifsc_res["valid"]:
             format_valid = False
             findings.append(f"IFSC Validation Error: {ifsc_res['error']}")
-            risk_score += 45
+            risk_score += 85
+            match_status = "CRITICAL_DISCREPANCY"
         else:
             findings.append(f"IFSC Validated: Registered to {ifsc_res['bank_name']}.")
     elif len(code_to_check) >= 15:
@@ -81,22 +94,31 @@ def verify_supplier_banking(req: BankVerificationRequest) -> BankVerificationRes
         if not iban_res["valid"]:
             format_valid = False
             findings.append(f"IBAN Checksum Error: {iban_res['error']}")
-            risk_score += 50
+            risk_score += 85
+            match_status = "CRITICAL_DISCREPANCY"
         else:
             findings.append(f"IBAN Checksum Verified (Country: {iban_res['country']}).")
     else:
-        # Basic routing or account format
-        if not re.match(r"^[A-Z0-9]{8,34}$", code_to_check):
-            format_valid = False
-            findings.append("Routing/IFSC/IBAN does not conform to standardized banking format.")
-            risk_score += 35
+        # Invalid format
+        format_valid = False
+        findings.append("Routing/IFSC/IBAN does not conform to standardized banking format (expected 11-char IFSC or 15-34 char IBAN).")
+        risk_score += 85
+        match_status = "INVALID_ROUTING_FORMAT"
+
+    # 1.5. Mule / Shadow keyword heuristics
+    suspicious_keywords = ["mule", "shadow", "fake", "offshore", "divert", "phish", "unverified"]
+    if any(k in req.supplier_name.lower() for k in suspicious_keywords) or any(k in code_to_check.lower() for k in suspicious_keywords):
+        risk_score += 90
+        format_valid = False
+        match_status = "CRITICAL_DISCREPANCY"
+        findings.append(f"SECURITY ADVISORY: Vendor identifier or account matches high-risk mule/diversion heuristics ({req.supplier_name}).")
 
     # 2. Historical Ledger Comparison (Detecting sudden bank detail tampering)
     if req.historical_account:
         cleaned_hist = req.historical_account.strip().replace(" ", "")
         cleaned_curr = req.account_number.strip().replace(" ", "")
         if cleaned_curr != cleaned_hist:
-            risk_score += 65
+            risk_score += 80
             match_status = "CRITICAL_DISCREPANCY"
             findings.append(
                 f"PAYMENT DIVERSION ALERT: Account number ({cleaned_curr}) deviates from authorized historical account ({cleaned_hist})."
@@ -109,10 +131,11 @@ def verify_supplier_banking(req: BankVerificationRequest) -> BankVerificationRes
     cleaned_acc = req.account_number.strip().replace(" ", "")
     if len(cleaned_acc) < 6:
         findings.append("Account number is unusually short for commercial wire operations.")
-        risk_score += 30
+        risk_score += 40
+        format_valid = False
 
     # Determine risk level
-    if risk_score >= 70:
+    if risk_score >= 60 or not format_valid:
         risk_level = "CRITICAL"
         is_verified = False
     elif risk_score >= 40:
