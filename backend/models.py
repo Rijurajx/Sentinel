@@ -87,3 +87,4 @@ class UnifiedDossierResponse(BaseModel):
     graph_topology: Dict[str, Any]
     executive_summary: str
     actionable_remediation: List[str]
+

@@ -145,3 +145,4 @@ def verify_supplier_banking(req: BankVerificationRequest) -> BankVerificationRes
         },
         provenance_hash=provenance_hash,
     )
+
