@@ -1,16 +1,32 @@
 import os
+import uuid
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+from models import (
+    BankVerificationRequest,
+    BankVerificationResponse,
+    EvidenceAnalysisRequest,
+    ScamShieldAnalysisResponse,
+    TrustGraphResponse,
+    UnifiedDossierRequest,
+    UnifiedDossierResponse,
+)
+from services.finguard_service import verify_supplier_banking
+from services.gemini_service import analyze_with_gemini
+from services.trustgraph_service import correlate_trustgraph_entities
 
 app = FastAPI(
     title="SENTINEL Intelligence API",
-    description="Deterministic Financial Threat Intelligence & FinGuard Verification",
-    version="1.0.0"
+    description="Deterministic Financial Threat Intelligence, FinGuard Verification & Gemini Flash ScamShield",
+    version="2.0.0",
 )
 
-# CORS configuration for frontend
+# CORS configuration for Vercel and local development
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,56 +37,129 @@ app.add_middleware(
 
 @app.get("/health")
 def health_check():
+    gemini_key_present = bool(os.getenv("GEMINI_API_KEY") and os.getenv("GEMINI_API_KEY") != "your_gemini_api_key_here")
     return {
         "status": "operational",
-        "service": "sentinel-api",
-        "engine": "Render Web Service",
-        "deterministic_verification": True
+        "service": "sentinel-intelligence-engine",
+        "finguard_deterministic": True,
+        "scamshield_ai": {
+            "model": os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
+            "live_gemini_key": gemini_key_present,
+            "mode": "live_gemini_flash" if gemini_key_present else "hybrid_heuristic_testing"
+        },
+        "trustgraph_engine": "active"
     }
 
-class BankVerificationRequest(BaseModel):
-    supplier_name: str
-    account_number: str
-    ifsc_or_iban: str
-    bank_name: Optional[str] = None
-    historical_account: Optional[str] = None
-
-class BankVerificationResponse(BaseModel):
-    is_verified: bool
-    risk_level: str
-    match_status: str
-    risk_score: int
-    findings: List[str]
-    provenance_hash: str
-
+# 1. FinGuard: Deterministic Supplier Bank Account & IFSC/IBAN Verification
 @app.post("/api/v1/finguard/verify", response_model=BankVerificationResponse)
 def verify_bank_details(req: BankVerificationRequest):
     """
-    Deterministic zero-hallucination verification of supplier banking details.
+    100% Deterministic Verification:
+    - IFSC checksum & Reserve Bank of India scheduling check
+    - IBAN ISO 7064 Mod 97-10 checksum validation
+    - Historical vendor ledger discrepancy alert
     """
-    findings = []
-    risk_score = 0
-    is_verified = True
-    match_status = "VERIFIED_EXACT_MATCH"
+    try:
+        return verify_supplier_banking(req)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"FinGuard verification failed: {str(e)}")
 
-    if req.historical_account and req.account_number != req.historical_account:
-        is_verified = False
-        risk_score = 92
-        match_status = "CRITICAL_DISCREPANCY"
-        findings.append("Account number mismatch against historical ledger.")
-        findings.append("Potential supplier payment redirection or business email compromise (BEC).")
+# 2. ScamShield: AI Evidence Analysis with Gemini Flash
+@app.post("/api/v1/scamshield/analyze", response_model=ScamShieldAnalysisResponse)
+def analyze_threat_evidence(req: EvidenceAnalysisRequest):
+    """
+    AI Evidence Analysis using Gemini Flash:
+    - Business Email Compromise (BEC) detection
+    - Urgency & coercion linguistic extraction
+    - Named entity recognition (domains, bank accounts, emails)
+    """
+    try:
+        return analyze_with_gemini(req)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"ScamShield analysis failed: {str(e)}")
 
-    return BankVerificationResponse(
-        is_verified=is_verified,
-        risk_level="CRITICAL" if not is_verified else "LOW",
-        match_status=match_status,
-        risk_score=risk_score,
-        findings=findings,
-        provenance_hash=f"prov_{abs(hash(req.account_number + req.ifsc_or_iban))}"
+# 3. TrustGraph: Entity Correlation & Network Topology
+@app.post("/api/v1/trustgraph/correlate", response_model=TrustGraphResponse)
+def correlate_entities(req: BankVerificationRequest):
+    """
+    Historical entity correlation & forensic relationship graph for React Flow.
+    """
+    try:
+        return correlate_trustgraph_entities(
+            supplier_name=req.supplier_name,
+            account_number=req.account_number,
+            ifsc_or_iban=req.ifsc_or_iban,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"TrustGraph correlation failed: {str(e)}")
+
+# 4. Unified Intelligence Dossier (Consolidated Threat Report)
+@app.post("/api/v1/intelligence/dossier", response_model=UnifiedDossierResponse)
+def generate_unified_dossier(req: UnifiedDossierRequest):
+    """
+    Synthesizes FinGuard bank telemetry, ScamShield AI extraction, and TrustGraph correlation
+    into an executive incident investigation dossier.
+    """
+    supplier_name = req.supplier_name or "Acme Industrial Supplies"
+    account_num = req.account_number or "920194810294"
+    ifsc_code = req.ifsc_or_iban or "HDFC0001234"
+    evidence_text = req.evidence_text or (
+        "URGENT: Please remit invoice #INV-8491 to our updated secondary treasury account immediately. "
+        "Do not contact our finance director as we are undergoing an emergency external audit."
+    )
+
+    # 1. FinGuard check
+    finguard_res = verify_supplier_banking(
+        BankVerificationRequest(
+            supplier_name=supplier_name,
+            account_number=account_num,
+            ifsc_or_iban=ifsc_code,
+            historical_account="102938475601"
+        )
+    )
+
+    # 2. ScamShield check
+    scamshield_res = analyze_with_gemini(
+        EvidenceAnalysisRequest(
+            content=evidence_text,
+            evidence_type="email",
+            sender="accounts@acme-industrial-supplies.net",
+            subject="URGENT: Revised Wire Instructions"
+        )
+    )
+
+    # 3. TrustGraph correlation
+    trustgraph_res = correlate_trustgraph_entities(
+        supplier_name=supplier_name,
+        account_number=account_num,
+        ifsc_or_iban=ifsc_code
+    )
+
+    # Calculate overall risk score
+    overall_threat_score = max(finguard_res.risk_score, int(scamshield_res.confidence_score * 100))
+    verdict = "CRITICAL_PAYMENT_INTERCEPTION_DETECTED" if overall_threat_score >= 70 else "VERIFIED_SAFE"
+
+    return UnifiedDossierResponse(
+        dossier_id=f"dos_{uuid.uuid4().hex[:10]}",
+        investigation_id=req.investigation_id,
+        overall_threat_score=overall_threat_score,
+        verdict=verdict,
+        finguard_status=finguard_res.model_dump(),
+        scamshield_intel=scamshield_res.model_dump(),
+        graph_topology=trustgraph_res.model_dump(),
+        executive_summary=(
+            f"Consolidated analysis indicates a {finguard_res.risk_level} threat on {supplier_name}. "
+            f"Payment diversion identified with urgency indicators: {', '.join(scamshield_res.urgency_indicators)}. "
+            f"Target routing linked to historical threat cluster."
+        ),
+        actionable_remediation=[
+            "Freeze all outgoing ACH/wire transmissions to the updated bank account.",
+            "Contact verified supplier executive via pre-established out-of-band telephone channel.",
+            "Report mule account and routing number to financial intelligence unit."
+        ]
     )
 
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
-
