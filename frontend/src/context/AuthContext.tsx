@@ -14,6 +14,7 @@ import {
   signOut,
   onAuthStateChanged,
   sendEmailVerification,
+  getAdditionalUserInfo,
   User as FirebaseUser,
 } from "firebase/auth";
 import {
@@ -103,22 +104,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (storedUser) {
         setUser(JSON.parse(storedUser));
-      }
 
-      if (storedWorkspaces) {
-        const parsed: Workspace[] = JSON.parse(storedWorkspaces);
-        setWorkspaces(parsed);
-        if (storedActiveWs) {
-          const active = parsed.find((w: Workspace) => w.id === storedActiveWs);
-          if (active) setActiveWorkspace(active);
-          else if (parsed.length > 0) setActiveWorkspace(parsed[0]);
-        } else if (parsed.length > 0) {
-          setActiveWorkspace(parsed[0]);
+        if (storedWorkspaces) {
+          const parsed: Workspace[] = JSON.parse(storedWorkspaces);
+          setWorkspaces(parsed);
+          if (storedActiveWs) {
+            const active = parsed.find((w: Workspace) => w.id === storedActiveWs);
+            if (active) setActiveWorkspace(active);
+            else if (parsed.length > 0) setActiveWorkspace(parsed[0]);
+          } else if (parsed.length > 0) {
+            setActiveWorkspace(parsed[0]);
+          }
         }
-      }
 
-      if (storedProfile) {
-        setProfile(JSON.parse(storedProfile));
+        if (storedProfile) {
+          setProfile(JSON.parse(storedProfile));
+        }
       }
     } catch (e) {
       console.warn("Storage hydration exception:", e);
@@ -147,6 +148,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const liveProfile = userDoc.data() as UserProfile;
                 setProfile(liveProfile);
                 localStorage.setItem("sentinel_profile", JSON.stringify(liveProfile));
+              } else {
+                setProfile(null);
+                localStorage.removeItem("sentinel_profile");
               }
 
               // Load workspaces from Firestore
@@ -160,6 +164,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   setActiveWorkspace(loadedWs[0]);
                   localStorage.setItem("sentinel_active_ws", loadedWs[0].id);
                 }
+              } else {
+                setWorkspaces([]);
+                setActiveWorkspace(null);
+                localStorage.removeItem("sentinel_workspaces");
+                localStorage.removeItem("sentinel_active_ws");
               }
             } catch (e) {
               console.warn("Firestore user sync error:", e);
@@ -172,16 +181,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const hasWorkspace = (): boolean => {
-    return workspaces.length > 0 || !!localStorage.getItem("sentinel_active_ws");
+    return workspaces.length > 0 && !!activeWorkspace;
   };
 
   const loginWithGoogle = async (): Promise<boolean> => {
     setIsLoading(true);
     try {
       let uid = "";
+      let isNewUser = false;
       if (isFirebaseConfigured && auth) {
         const res = await signInWithPopup(auth, googleProvider);
         uid = res.user.uid;
+        const additionalInfo = getAdditionalUserInfo(res);
+        isNewUser = additionalInfo?.isNewUser ?? false;
+
         const session: UserSession = {
           uid: res.user.uid,
           email: res.user.email || "google-user@sentinel.app",
@@ -194,15 +207,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         uid = `g-${Date.now()}`;
         const mockGoogleUser: UserSession = {
           uid,
-          email: "rijurajdatta8@gmail.com",
-          displayName: "Riju Raj",
+          email: "analyst@sentinel.app",
+          displayName: "Sentinel Analyst",
           photoURL: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop",
         };
         setUser(mockGoogleUser);
         localStorage.setItem("sentinel_user", JSON.stringify(mockGoogleUser));
       }
 
-      // Check if user already has workspaces in Firestore or local storage
+      // If Firebase explicitly notes a new user account, enforce onboarding workflow!
+      if (isNewUser) {
+        setWorkspaces([]);
+        setActiveWorkspace(null);
+        setProfile(null);
+        localStorage.removeItem("sentinel_workspaces");
+        localStorage.removeItem("sentinel_active_ws");
+        localStorage.removeItem("sentinel_profile");
+        return false;
+      }
+
+      // Check if user already has workspaces in Firestore
       if (isFirebaseConfigured && db && uid) {
         try {
           const wsQuery = query(collection(db, "workspaces"), where("ownerUid", "==", uid));
@@ -213,14 +237,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem("sentinel_workspaces", JSON.stringify(loadedWs));
             setActiveWorkspace(loadedWs[0]);
             localStorage.setItem("sentinel_active_ws", loadedWs[0].id);
+
+            const userDoc = await getDoc(doc(db, "users", uid));
+            if (userDoc.exists()) {
+              const liveProfile = userDoc.data() as UserProfile;
+              setProfile(liveProfile);
+              localStorage.setItem("sentinel_profile", JSON.stringify(liveProfile));
+            }
             return true; // Already has workspace
+          } else {
+            // User exists in Auth but has no workspaces yet!
+            setWorkspaces([]);
+            setActiveWorkspace(null);
+            setProfile(null);
+            localStorage.removeItem("sentinel_workspaces");
+            localStorage.removeItem("sentinel_active_ws");
+            localStorage.removeItem("sentinel_profile");
+            return false;
           }
         } catch (e) {
           console.warn("Firestore workspace check error:", e);
         }
       }
 
-      return workspaces.length > 0;
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -262,14 +302,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem("sentinel_workspaces", JSON.stringify(loadedWs));
             setActiveWorkspace(loadedWs[0]);
             localStorage.setItem("sentinel_active_ws", loadedWs[0].id);
+
+            const userDoc = await getDoc(doc(db, "users", uid));
+            if (userDoc.exists()) {
+              const liveProfile = userDoc.data() as UserProfile;
+              setProfile(liveProfile);
+              localStorage.setItem("sentinel_profile", JSON.stringify(liveProfile));
+            }
             return true; // Returning user with workspace!
+          } else {
+            setWorkspaces([]);
+            setActiveWorkspace(null);
+            setProfile(null);
+            localStorage.removeItem("sentinel_workspaces");
+            localStorage.removeItem("sentinel_active_ws");
+            localStorage.removeItem("sentinel_profile");
+            return false;
           }
         } catch (e) {
           console.warn("Firestore check error:", e);
         }
       }
 
-      return workspaces.length > 0;
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -422,7 +477,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await signOut(auth);
     }
     setUser(null);
+    setProfile(null);
+    setWorkspaces([]);
+    setActiveWorkspace(null);
     localStorage.removeItem("sentinel_user");
+    localStorage.removeItem("sentinel_workspaces");
+    localStorage.removeItem("sentinel_active_ws");
+    localStorage.removeItem("sentinel_profile");
     sessionStorage.removeItem("sentinel_pending_email");
     sessionStorage.removeItem("sentinel_verify_code");
   };

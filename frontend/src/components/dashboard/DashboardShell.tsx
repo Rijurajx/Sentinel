@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { PrimarySidebar } from "./PrimarySidebar";
 import { ContextualMiddlePane } from "./ContextualMiddlePane";
 import { MainWorkspace } from "./MainWorkspace";
@@ -26,8 +27,20 @@ import {
 } from "@/lib/firestoreService";
 
 export function DashboardShell() {
-  const { activeWorkspace, profile, user } = useAuth();
+  const router = useRouter();
+  const { activeWorkspace, workspaces, profile, user, isLoading } = useAuth();
   const [activeView, setActiveView] = useState("inbox");
+
+  // Route protection: Enforce onboarding for new accounts
+  useEffect(() => {
+    if (!isLoading) {
+      if (!user) {
+        router.push("/login");
+      } else if (!activeWorkspace && workspaces.length === 0) {
+        router.push("/onboarding/workspace");
+      }
+    }
+  }, [user, activeWorkspace, workspaces, isLoading, router]);
 
   // Real database-backed reactive states
   const [investigations, setInvestigations] = useState<InvestigationItem[]>([]);
@@ -205,6 +218,14 @@ export function DashboardShell() {
   const handleCreateEntity = async (entity: EntityItem) => {
     await addEntityDoc(activeWsId, entity);
   };
+
+  if (isLoading || (!activeWorkspace && workspaces.length === 0)) {
+    return (
+      <div className="h-screen w-screen bg-[#08090a] flex items-center justify-center">
+        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen w-screen overflow-hidden flex bg-[#08090a] text-[#f7f8f8]">
