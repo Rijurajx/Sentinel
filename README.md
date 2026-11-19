@@ -39,12 +39,27 @@ Sentinel/
 
 ---
 
-## ☁️ Google Cloud & Firebase Stack
+## ☁️ Deployment Stack
 
-- **Authentication**: Firebase Authentication (Google OAuth + Email/Password with verification)
-- **Primary Database**: Cloud Firestore (Reactive workspace multi-tenancy)
-- **File Storage**: Cloud Storage for Firebase (Evidence Vault attachments)
-- **Backend / AI Engine**: Google Cloud Run + Gemini API
+- **Frontend**: [Vercel](https://vercel.com) (Next.js 16 App Router on Edge/Node runtime)
+- **Backend / API**: [Render](https://render.com) (FastAPI Web Service with `render.yaml` Blueprint)
+- **Authentication & Database**: Firebase Authentication & Cloud Firestore (Free Spark tier, zero billing required)
+
+---
+
+## 🚀 Deployment Instructions
+
+### 1. Deploy Frontend to Vercel
+1. Go to [Vercel](https://vercel.com/new) and import `Rijurajx/Sentinel`.
+2. In **Root Directory**, click **Edit** and select **`frontend`**.
+3. Add Environment Variables from `frontend/.env.example`.
+4. Click **Deploy**.
+
+### 2. Deploy Backend to Render
+1. Go to [Render](https://dashboard.render.com/) > **New** > **Blueprint** (or **Web Service**).
+2. Connect `Rijurajx/Sentinel` (Render auto-detects `render.yaml`).
+3. Set `GEMINI_API_KEY` in Environment Variables.
+4. Click **Apply** to deploy the FastAPI service.
 
 ---
 
@@ -68,3 +83,4 @@ pip install -r requirements.txt
 cp .env.example .env
 uvicorn main:app --reload --port 8000
 ```
+
