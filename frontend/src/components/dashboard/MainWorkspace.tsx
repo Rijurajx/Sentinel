@@ -23,8 +23,10 @@ import {
   Plus,
   Scan,
   Database,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
+import { analyzeThreatEvidence, ScamShieldResult } from "@/lib/apiClient";
 
 interface MainWorkspaceProps {
   investigation?: InvestigationItem | null;
@@ -53,6 +55,22 @@ export function MainWorkspace({
   const [copiedLink, setCopiedLink] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "graph" | "evidence" | "finguard">("overview");
   const [activeGraphNode, setActiveGraphNode] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [liveAnalysis, setLiveAnalysis] = useState<ScamShieldResult | null>(null);
+
+  const handleRunLiveTriage = async () => {
+    if (!investigation) return;
+    setIsAnalyzing(true);
+    try {
+      const res = await analyzeThreatEvidence({
+        content: `${investigation.title}. ${investigation.description}. Target: ${investigation.targetEntity}`,
+        evidence_type: "email",
+      });
+      setLiveAnalysis(res);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -271,14 +289,26 @@ export function MainWorkspace({
             <div className="rounded-lg border border-white/[0.08] bg-white/[0.015] p-4 space-y-3.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-medium text-[#f7f8f8]">
-                  <Sparkles className="w-3.5 h-3.5 text-[#8a8f98]" />
+                  <Sparkles className="w-3.5 h-3.5 text-[#5e6ad2]" />
                   <span>Triage Intelligence</span>
                 </div>
                 <button
                   type="button"
-                  className="w-5 h-5 flex items-center justify-center text-[#62666d] hover:text-[#8a8f98]"
+                  onClick={handleRunLiveTriage}
+                  disabled={isAnalyzing}
+                  className="px-2 py-0.5 rounded bg-white/[0.04] hover:bg-white/[0.08] text-[11px] text-[#8a8f98] hover:text-white transition-colors flex items-center gap-1.5 disabled:opacity-50"
                 >
-                  <MoreHorizontal className="w-3.5 h-3.5" />
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin text-[#5e6ad2]" />
+                      <span>Analyzing with Gemini...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3 h-3 text-[#5e6ad2]" />
+                      <span>Run Live AI Triage</span>
+                    </>
+                  )}
                 </button>
               </div>
 
@@ -288,17 +318,35 @@ export function MainWorkspace({
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/[0.05] text-[#d0d3d8] text-[11px]">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#5e6ad2]" />
-                    <span>Gemini 1.5 Pro</span>
+                    <span>{liveAnalysis ? liveAnalysis.model_used : "Gemini Flash"}</span>
                   </span>
                   <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/[0.05] text-[#d0d3d8] text-[11px]">
-                    <span>Spoofed Domain</span>
+                    <span>{liveAnalysis ? liveAnalysis.threat_category : "BEC Anomaly"}</span>
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/[0.05] text-[#eb5757] text-[11px]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#eb5757]" />
-                    <span>Risk Alert ✓</span>
+                  <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] ${
+                    liveAnalysis?.severity === "CRITICAL"
+                      ? "bg-[#eb5757]/10 text-[#eb5757]"
+                      : "bg-[#f0b96d]/10 text-[#f0b96d]"
+                  }`}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                    <span>{liveAnalysis ? `${liveAnalysis.severity} Severity` : "Risk Alert ✓"}</span>
                   </span>
                 </div>
               </div>
+
+              {liveAnalysis && (
+                <div className="text-[11px] text-[#8a8f98] bg-white/[0.02] p-2.5 rounded border border-white/[0.06] space-y-1.5">
+                  <div className="text-white font-medium">{liveAnalysis.summary}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#62666d]">Triggers:</span>
+                    <span className="text-[#d0d3d8]">{liveAnalysis.urgency_indicators.join(", ") || "None"}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#62666d]">Remediation:</span>
+                    <span className="text-[#82c9a7]">{liveAnalysis.recommended_action}</span>
+                  </div>
+                </div>
+              )}
 
               {/* Duplicate / Correlation Row */}
               {investigation.intelligence.relatedIncidentId && (

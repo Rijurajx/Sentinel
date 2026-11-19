@@ -11,6 +11,7 @@ import {
   ShieldAlert,
   CreditCard,
   FileText,
+  Loader2,
 } from "lucide-react";
 import { SentinelLogo } from "@/components/ui/SentinelLogo";
 import {
@@ -19,6 +20,7 @@ import {
   EvidenceItem,
   EntityItem,
 } from "@/lib/dashboard-data";
+import { verifySupplierBankDetails, analyzeThreatEvidence } from "@/lib/apiClient";
 
 interface QuickCreateModalProps {
   isOpen: boolean;
@@ -63,69 +65,105 @@ export function QuickCreateModal({
   const [entValue, setEntValue] = useState("");
   const [entType, setEntType] = useState<"Domain" | "Bank Account" | "Phone Number" | "Organization">("Domain");
   const [entRisk, setEntRisk] = useState<"Critical" | "High" | "Medium" | "Verified">("Critical");
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
 
-    if (selectedAction === "investigation") {
-      if (!invTitle.trim()) return;
-      onCreateInvestigation(
-        invTitle.trim(),
-        invTarget.trim() || "Target Entity",
-        invAmount ? (invAmount.startsWith("$") ? invAmount : `$${invAmount}`) : "$50,000.00"
-      );
-      setInvTitle("");
-      setInvTarget("");
-      setInvAmount("");
-    } else if (selectedAction === "supplier" && onCreateSupplier) {
-      if (!supName.trim() || !supAccount.trim()) return;
-      const newSup: SupplierItem = {
-        id: `SUP-${Date.now()}`,
-        name: supName.trim(),
-        accountNumber: supAccount.trim(),
-        ifsc: (supIfsc.trim() || "HDFC0001234").toUpperCase(),
-        bankBranch: supBranch.trim() || "Commercial Banking Division",
-        status: "Under Review",
-        riskLevel: "Medium",
-        totalInvoiced: supInvoiced ? (supInvoiced.startsWith("$") ? supInvoiced : `$${supInvoiced}`) : "$10,000.00",
-        lastPaymentDate: "Pending Verification",
-      };
-      onCreateSupplier(newSup);
-      setSupName("");
-      setSupAccount("");
-      setSupIfsc("");
-      setSupBranch("");
-      setSupInvoiced("");
-    } else if (selectedAction === "upload" && onCreateEvidence) {
-      if (!evTitle.trim()) return;
-      const newEv: EvidenceItem = {
-        id: `EV-${Date.now()}`,
-        title: evTitle.trim(),
-        type: evType,
-        fileSize: evSize || "240 KB",
-        associatedInvestigationId: evIncident.trim() || "GLOBAL-QUEUE",
-        uploadedAt: "Just now",
-        status: "Extracted",
-      };
-      onCreateEvidence(newEv);
-      setEvTitle("");
-    } else if (selectedAction === "entity" && onCreateEntity) {
-      if (!entValue.trim()) return;
-      const newEnt: EntityItem = {
-        id: `ENT-${Date.now()}`,
-        value: entValue.trim(),
-        type: entType,
-        riskLevel: entRisk,
-        incidentCount: 1,
-        lastObserved: "Just now",
-      };
-      onCreateEntity(newEnt);
-      setEntValue("");
+    try {
+      if (selectedAction === "investigation") {
+        if (!invTitle.trim()) return;
+        onCreateInvestigation(
+          invTitle.trim(),
+          invTarget.trim() || "Target Entity",
+          invAmount ? (invAmount.startsWith("$") ? invAmount : `$${invAmount}`) : "$50,000.00"
+        );
+        setInvTitle("");
+        setInvTarget("");
+        setInvAmount("");
+      } else if (selectedAction === "supplier" && onCreateSupplier) {
+        if (!supName.trim() || !supAccount.trim()) return;
+        
+        // Live FinGuard Verification via Backend
+        const ifscOrIban = (supIfsc.trim() || "HDFC0001234").toUpperCase();
+        const verification = await verifySupplierBankDetails({
+          supplier_name: supName.trim(),
+          account_number: supAccount.trim(),
+          ifsc_or_iban: ifscOrIban,
+        });
+
+        let status: "Verified" | "Discrepancy Detected" | "Under Review" = "Under Review";
+        let riskLevel: "Critical" | "Medium" | "Low" = "Low";
+
+        if (verification.risk_level === "CRITICAL" || verification.risk_level === "HIGH") {
+          status = "Discrepancy Detected";
+          riskLevel = "Critical";
+        } else if (verification.risk_level === "MEDIUM") {
+          status = "Under Review";
+          riskLevel = "Medium";
+        } else if (verification.is_verified) {
+          status = "Verified";
+          riskLevel = "Low";
+        }
+
+        const newSup: SupplierItem = {
+          id: `SUP-${Date.now()}`,
+          name: supName.trim(),
+          accountNumber: supAccount.trim(),
+          ifsc: ifscOrIban,
+          bankBranch: verification.findings[0] || supBranch.trim() || "Scheduled Banking Division",
+          status,
+          riskLevel,
+          totalInvoiced: supInvoiced ? (supInvoiced.startsWith("$") ? supInvoiced : `$${supInvoiced}`) : "$10,000.00",
+          lastPaymentDate: "Verified Just Now",
+        };
+        onCreateSupplier(newSup);
+        setSupName("");
+        setSupAccount("");
+        setSupIfsc("");
+        setSupBranch("");
+        setSupInvoiced("");
+      } else if (selectedAction === "upload" && onCreateEvidence) {
+        if (!evTitle.trim()) return;
+        
+        // Live ScamShield Analysis via Backend
+        const analysis = await analyzeThreatEvidence({
+          content: evTitle.trim(),
+          evidence_type: evType.toLowerCase(),
+        });
+
+        const newEv: EvidenceItem = {
+          id: `EV-${Date.now()}`,
+          title: evTitle.trim(),
+          type: evType,
+          fileSize: evSize || "240 KB",
+          associatedInvestigationId: evIncident.trim() || "GLOBAL-QUEUE",
+          uploadedAt: "Just now",
+          status: analysis.threat_detected ? "Flagged" : "Extracted",
+        };
+        onCreateEvidence(newEv);
+        setEvTitle("");
+      } else if (selectedAction === "entity" && onCreateEntity) {
+        if (!entValue.trim()) return;
+        const newEnt: EntityItem = {
+          id: `ENT-${Date.now()}`,
+          value: entValue.trim(),
+          type: entType,
+          riskLevel: entRisk,
+          incidentCount: 1,
+          lastObserved: "Just now",
+        };
+        onCreateEntity(newEnt);
+        setEntValue("");
+      }
+
+      onClose();
+    } finally {
+      setLoading(false);
     }
-
-    onClose();
   };
 
   return (
@@ -412,9 +450,17 @@ export function QuickCreateModal({
             </button>
             <button
               type="submit"
-              className="px-4 py-1.5 rounded-lg bg-white/[0.08] hover:bg-white text-white hover:text-black text-xs font-medium transition-colors"
+              disabled={loading}
+              className="px-4 py-1.5 rounded-lg bg-white/[0.08] hover:bg-white text-white hover:text-black text-xs font-medium transition-colors disabled:opacity-50 flex items-center gap-1.5"
             >
-              Create Record
+              {loading ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Verifying & Saving...</span>
+                </>
+              ) : (
+                <span>Create Record</span>
+              )}
             </button>
           </div>
         </form>
