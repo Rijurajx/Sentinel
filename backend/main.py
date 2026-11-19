@@ -28,6 +28,25 @@ app = FastAPI(
     openapi_url="/openapi.json"
 )
 
+# Vercel serverless path normalization middleware
+@app.middleware("http")
+async def vercel_path_middleware(request: Request, call_next):
+    # When deployed on Vercel, the rewrite forwards to /api/index.py?path=/...
+    # We recover the true client-requested path
+    raw_path = (
+        request.query_params.get("path")
+        or request.headers.get("x-matched-path")
+        or request.headers.get("x-forwarded-uri")
+        or request.headers.get("x-invoke-path")
+    )
+    if raw_path and request.scope.get("path") in ["/api/index.py", "/api/index", "/api/index.py/"]:
+        # Ensure single leading slash
+        cleaned_path = "/" + raw_path.lstrip("/")
+        request.scope["path"] = cleaned_path
+    
+    response = await call_next(request)
+    return response
+
 # CORS configuration allowing all origins (Vercel frontend, preview deployments, localhost)
 app.add_middleware(
     CORSMiddleware,
@@ -181,18 +200,6 @@ def generate_unified_dossier(req: UnifiedDossierRequest):
             "Report mule account and routing number to financial intelligence unit."
         ]
     )
-
-# Fallback diagnostic handler
-@app.api_route("/{full_path:path}", methods=["GET", "POST", "OPTIONS", "HEAD"])
-def diagnostic_route(request: Request, full_path: str):
-    return {
-        "status": "operational",
-        "message": "Path received by Sentinel API",
-        "requested_path": full_path,
-        "method": request.method,
-        "headers": dict(request.headers),
-        "available_routes": [r.path for r in app.routes if hasattr(r, 'path')]
-    }
 
 if __name__ == "__main__":
     import uvicorn
