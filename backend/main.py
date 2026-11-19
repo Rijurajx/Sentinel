@@ -1,6 +1,6 @@
 import os
 import uuid
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
@@ -41,6 +41,7 @@ app.add_middleware(
 
 @app.get("/")
 @app.get("/api")
+@app.get("/api/")
 def root():
     return {
         "status": "operational",
@@ -134,7 +135,6 @@ def generate_unified_dossier(req: UnifiedDossierRequest):
         "Do not contact our finance director as we are undergoing an emergency external audit."
     )
 
-    # 1. FinGuard check
     finguard_res = verify_supplier_banking(
         BankVerificationRequest(
             supplier_name=supplier_name,
@@ -144,7 +144,6 @@ def generate_unified_dossier(req: UnifiedDossierRequest):
         )
     )
 
-    # 2. ScamShield check
     scamshield_res = analyze_with_gemini(
         EvidenceAnalysisRequest(
             content=evidence_text,
@@ -154,14 +153,12 @@ def generate_unified_dossier(req: UnifiedDossierRequest):
         )
     )
 
-    # 3. TrustGraph correlation
     trustgraph_res = correlate_trustgraph_entities(
         supplier_name=supplier_name,
         account_number=account_num,
         ifsc_or_iban=ifsc_code
     )
 
-    # Calculate overall risk score
     overall_threat_score = max(finguard_res.risk_score, int(scamshield_res.confidence_score * 100))
     verdict = "CRITICAL_PAYMENT_INTERCEPTION_DETECTED" if overall_threat_score >= 70 else "VERIFIED_SAFE"
 
@@ -184,6 +181,17 @@ def generate_unified_dossier(req: UnifiedDossierRequest):
             "Report mule account and routing number to financial intelligence unit."
         ]
     )
+
+# Fallback diagnostic handler
+@app.api_route("/{full_path:path}", methods=["GET", "POST", "OPTIONS", "HEAD"])
+def diagnostic_route(request: Request, full_path: str):
+    return {
+        "status": "operational",
+        "message": "Path received by Sentinel API",
+        "requested_path": full_path,
+        "method": request.method,
+        "available_routes": [r.path for r in app.routes if hasattr(r, 'path')]
+    }
 
 if __name__ == "__main__":
     import uvicorn
