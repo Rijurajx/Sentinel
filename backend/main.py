@@ -24,23 +24,45 @@ app = FastAPI(
     title="SENTINEL Intelligence API",
     description="Deterministic Financial Threat Intelligence, FinGuard Verification & Gemini Flash ScamShield",
     version="2.0.0",
+    docs_url="/docs",
+    openapi_url="/openapi.json"
 )
 
-# CORS configuration for Vercel and local development
+# CORS configuration allowing all origins (Vercel frontend, preview deployments, localhost)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=86400,
 )
 
+@app.get("/")
+@app.get("/api")
+def root():
+    return {
+        "status": "operational",
+        "service": "SENTINEL Intelligence Engine",
+        "version": "2.0.0",
+        "endpoints": [
+            "/health",
+            "/api/v1/finguard/verify",
+            "/api/v1/scamshield/analyze",
+            "/api/v1/trustgraph/correlate",
+            "/api/v1/intelligence/dossier"
+        ]
+    }
+
 @app.get("/health")
+@app.get("/api/health")
 def health_check():
     gemini_key_present = bool(os.getenv("GEMINI_API_KEY") and os.getenv("GEMINI_API_KEY") != "your_gemini_api_key_here")
     return {
         "status": "operational",
         "service": "sentinel-intelligence-engine",
+        "cors_enabled": True,
         "finguard_deterministic": True,
         "scamshield_ai": {
             "model": os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
@@ -52,6 +74,7 @@ def health_check():
 
 # 1. FinGuard: Deterministic Supplier Bank Account & IFSC/IBAN Verification
 @app.post("/api/v1/finguard/verify", response_model=BankVerificationResponse)
+@app.post("/v1/finguard/verify", response_model=BankVerificationResponse)
 def verify_bank_details(req: BankVerificationRequest):
     """
     100% Deterministic Verification:
@@ -66,6 +89,7 @@ def verify_bank_details(req: BankVerificationRequest):
 
 # 2. ScamShield: AI Evidence Analysis with Gemini Flash
 @app.post("/api/v1/scamshield/analyze", response_model=ScamShieldAnalysisResponse)
+@app.post("/v1/scamshield/analyze", response_model=ScamShieldAnalysisResponse)
 def analyze_threat_evidence(req: EvidenceAnalysisRequest):
     """
     AI Evidence Analysis using Gemini Flash:
@@ -80,6 +104,7 @@ def analyze_threat_evidence(req: EvidenceAnalysisRequest):
 
 # 3. TrustGraph: Entity Correlation & Network Topology
 @app.post("/api/v1/trustgraph/correlate", response_model=TrustGraphResponse)
+@app.post("/v1/trustgraph/correlate", response_model=TrustGraphResponse)
 def correlate_entities(req: BankVerificationRequest):
     """
     Historical entity correlation & forensic relationship graph for React Flow.
@@ -95,6 +120,7 @@ def correlate_entities(req: BankVerificationRequest):
 
 # 4. Unified Intelligence Dossier (Consolidated Threat Report)
 @app.post("/api/v1/intelligence/dossier", response_model=UnifiedDossierResponse)
+@app.post("/v1/intelligence/dossier", response_model=UnifiedDossierResponse)
 def generate_unified_dossier(req: UnifiedDossierRequest):
     """
     Synthesizes FinGuard bank telemetry, ScamShield AI extraction, and TrustGraph correlation
