@@ -190,6 +190,7 @@ def diagnostic_route(request: Request, full_path: str):
         "message": "Path received by Sentinel API",
         "requested_path": full_path,
         "method": request.method,
+        "headers": dict(request.headers),
         "available_routes": [r.path for r in app.routes if hasattr(r, 'path')]
     }
 
