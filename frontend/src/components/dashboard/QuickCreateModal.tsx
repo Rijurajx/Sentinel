@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   X,
   Briefcase,
@@ -29,6 +29,7 @@ interface QuickCreateModalProps {
   onCreateSupplier?: (supplier: SupplierItem) => void;
   onCreateEvidence?: (evidence: EvidenceItem) => void;
   onCreateEntity?: (entity: EntityItem) => void;
+  initialAction?: "investigation" | "supplier" | "upload" | "entity";
 }
 
 export function QuickCreateModal({
@@ -38,10 +39,17 @@ export function QuickCreateModal({
   onCreateSupplier,
   onCreateEvidence,
   onCreateEntity,
+  initialAction = "investigation",
 }: QuickCreateModalProps) {
   const [selectedAction, setSelectedAction] = useState<
     "investigation" | "supplier" | "upload" | "entity"
-  >("investigation");
+  >(initialAction);
+
+  useEffect(() => {
+    if (isOpen && initialAction) {
+      setSelectedAction(initialAction);
+    }
+  }, [isOpen, initialAction]);
 
   // Investigation State
   const [invTitle, setInvTitle] = useState("");

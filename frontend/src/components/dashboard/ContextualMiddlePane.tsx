@@ -16,6 +16,7 @@ import {
   GitFork,
   Circle,
   Clock,
+  Plus,
 } from "lucide-react";
 
 interface ContextualMiddlePaneProps {
@@ -28,7 +29,7 @@ interface ContextualMiddlePaneProps {
   onSelectInvestigation: (id: string) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
-  onOpenQuickCreate?: () => void;
+  onOpenQuickCreate?: (tab?: "investigation" | "supplier" | "upload" | "entity") => void;
 }
 
 export function ContextualMiddlePane({
@@ -109,14 +110,40 @@ export function ContextualMiddlePane({
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            title="Collapse panel"
-            className="w-6 h-6 rounded flex items-center justify-center text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-white/[0.04] transition-colors"
-          >
-            <PanelLeftClose className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {onOpenQuickCreate && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (activeView === "suppliers") onOpenQuickCreate("supplier");
+                  else if (activeView === "evidence" || activeView === "scamshield") onOpenQuickCreate("upload");
+                  else if (activeView === "graph") onOpenQuickCreate("entity");
+                  else onOpenQuickCreate("investigation");
+                }}
+                className="px-2 py-0.5 rounded bg-[#5e6ad2] hover:bg-[#6f7be8] text-white text-[11px] font-medium flex items-center gap-1 transition-colors shadow-sm shadow-[#5e6ad2]/20"
+              >
+                <Plus className="w-3 h-3" />
+                <span>
+                  {activeView === "suppliers"
+                    ? "Add Supplier"
+                    : activeView === "evidence"
+                    ? "Upload"
+                    : activeView === "graph"
+                    ? "Add Entity"
+                    : "New Case"}
+                </span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              title="Collapse panel"
+              className="w-6 h-6 rounded flex items-center justify-center text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-white/[0.04] transition-colors"
+            >
+              <PanelLeftClose className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* Linear Minimal Filter Pills */}
@@ -274,6 +301,16 @@ export function ContextualMiddlePane({
                 </span>
               </div>
             ))}
+            {suppliers.length > 0 && onOpenQuickCreate && (
+              <button
+                type="button"
+                onClick={() => onOpenQuickCreate("supplier")}
+                className="w-full mt-2 p-2 rounded-lg border border-dashed border-white/[0.08] hover:border-white/20 hover:bg-white/[0.02] text-xs text-[#8a8f98] hover:text-white flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5 text-[#5e6ad2]" />
+                <span>+ Add Another Supplier</span>
+              </button>
+            )}
             {suppliers.length === 0 && (
               <div className="py-16 px-4 text-center space-y-3">
                 <Building2 className="w-6 h-6 text-[#62666d] mx-auto" />
@@ -286,8 +323,8 @@ export function ContextualMiddlePane({
                 {onOpenQuickCreate && (
                   <button
                     type="button"
-                    onClick={onOpenQuickCreate}
-                    className="px-3 py-1.5 rounded-lg bg-white/[0.08] hover:bg-white text-white hover:text-black text-xs font-medium transition-colors"
+                    onClick={() => onOpenQuickCreate("supplier")}
+                    className="px-3 py-1.5 rounded-lg bg-[#5e6ad2] hover:bg-[#6f7be8] text-white text-xs font-medium transition-colors"
                   >
                     + Add Supplier
                   </button>
@@ -321,6 +358,16 @@ export function ContextualMiddlePane({
                 </span>
               </div>
             ))}
+            {evidenceList.length > 0 && onOpenQuickCreate && (
+              <button
+                type="button"
+                onClick={() => onOpenQuickCreate("upload")}
+                className="w-full mt-2 p-2 rounded-lg border border-dashed border-white/[0.08] hover:border-white/20 hover:bg-white/[0.02] text-xs text-[#8a8f98] hover:text-white flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5 text-[#5e6ad2]" />
+                <span>+ Upload Another Evidence</span>
+              </button>
+            )}
             {evidenceList.length === 0 && (
               <div className="py-16 px-4 text-center space-y-3">
                 <FileText className="w-6 h-6 text-[#62666d] mx-auto" />
@@ -333,8 +380,8 @@ export function ContextualMiddlePane({
                 {onOpenQuickCreate && (
                   <button
                     type="button"
-                    onClick={onOpenQuickCreate}
-                    className="px-3 py-1.5 rounded-lg bg-white/[0.08] hover:bg-white text-white hover:text-black text-xs font-medium transition-colors"
+                    onClick={() => onOpenQuickCreate("upload")}
+                    className="px-3 py-1.5 rounded-lg bg-[#5e6ad2] hover:bg-[#6f7be8] text-white text-xs font-medium transition-colors"
                   >
                     + Upload Evidence
                   </button>
@@ -368,6 +415,16 @@ export function ContextualMiddlePane({
                 </span>
               </div>
             ))}
+            {entities.length > 0 && onOpenQuickCreate && (
+              <button
+                type="button"
+                onClick={() => onOpenQuickCreate("entity")}
+                className="w-full mt-2 p-2 rounded-lg border border-dashed border-white/[0.08] hover:border-white/20 hover:bg-white/[0.02] text-xs text-[#8a8f98] hover:text-white flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5 text-[#5e6ad2]" />
+                <span>+ Add Forensic Entity</span>
+              </button>
+            )}
             {entities.length === 0 && (
               <div className="py-16 px-4 text-center space-y-3">
                 <GitFork className="w-6 h-6 text-[#62666d] mx-auto" />
@@ -380,8 +437,8 @@ export function ContextualMiddlePane({
                 {onOpenQuickCreate && (
                   <button
                     type="button"
-                    onClick={onOpenQuickCreate}
-                    className="px-3 py-1.5 rounded-lg bg-white/[0.08] hover:bg-white text-white hover:text-black text-xs font-medium transition-colors"
+                    onClick={() => onOpenQuickCreate("entity")}
+                    className="px-3 py-1.5 rounded-lg bg-[#5e6ad2] hover:bg-[#6f7be8] text-white text-xs font-medium transition-colors"
                   >
                     + Add Entity
                   </button>

@@ -55,8 +55,51 @@ export function DashboardShell() {
   const [isMiddleCollapsed, setIsMiddleCollapsed] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isQuickCreateOpen, setIsQuickCreateOpen] = useState(false);
+  const [quickCreateTab, setQuickCreateTab] = useState<
+    "investigation" | "supplier" | "upload" | "entity"
+  >("investigation");
   const [isStarred, setIsStarred] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+
+  const handleOpenQuickCreate = (
+    tab?: "investigation" | "supplier" | "upload" | "entity"
+  ) => {
+    if (tab) {
+      setQuickCreateTab(tab);
+    } else if (activeView === "suppliers") {
+      setQuickCreateTab("supplier");
+    } else if (activeView === "evidence" || activeView === "scamshield") {
+      setQuickCreateTab("upload");
+    } else if (activeView === "graph") {
+      setQuickCreateTab("entity");
+    } else {
+      setQuickCreateTab("investigation");
+    }
+    setIsQuickCreateOpen(true);
+  };
+
+  // Keyboard shortcuts: 'C' opens quick create modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if ((e.key === "c" || e.key === "C") && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        handleOpenQuickCreate();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeView]);
 
   // Subscribe to real Firestore database collections for the active workspace
   useEffect(() => {
@@ -239,7 +282,7 @@ export function DashboardShell() {
         }}
         isCollapsed={isLeftCollapsed}
         onToggleCollapse={() => setIsLeftCollapsed(!isLeftCollapsed)}
-        onOpenQuickCreate={() => setIsQuickCreateOpen(true)}
+        onOpenQuickCreate={() => handleOpenQuickCreate()}
         onOpenSearch={() => setIsSearchOpen(true)}
         onOpenProfileSettings={() => setIsEditingProfile(true)}
       />
@@ -258,7 +301,7 @@ export function DashboardShell() {
         }}
         isCollapsed={isMiddleCollapsed}
         onToggleCollapse={() => setIsMiddleCollapsed(true)}
-        onOpenQuickCreate={() => setIsQuickCreateOpen(true)}
+        onOpenQuickCreate={handleOpenQuickCreate}
       />
 
       {/* 3. Right Pane — Main Intelligence Workspace or Profile Settings */}
@@ -273,7 +316,7 @@ export function DashboardShell() {
           onAddComment={handleAddComment}
           onToggleStar={() => setIsStarred(!isStarred)}
           isStarred={isStarred}
-          onOpenQuickCreate={() => setIsQuickCreateOpen(true)}
+          onOpenQuickCreate={() => handleOpenQuickCreate()}
         />
       )}
 
@@ -300,6 +343,7 @@ export function DashboardShell() {
       <QuickCreateModal
         isOpen={isQuickCreateOpen}
         onClose={() => setIsQuickCreateOpen(false)}
+        initialAction={quickCreateTab}
         onCreateInvestigation={handleCreateInvestigation}
         onCreateSupplier={handleCreateSupplier}
         onCreateEvidence={handleCreateEvidence}

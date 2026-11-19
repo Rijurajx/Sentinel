@@ -196,7 +196,19 @@ export function MainWorkspace({
         </div>
 
         {/* Right Action Icons (Linear Reference) */}
-        <div className="flex items-center gap-1.5 text-[#8a8f98] text-xs">
+        <div className="flex items-center gap-2 text-[#8a8f98] text-xs">
+          {onOpenQuickCreate && (
+            <button
+              type="button"
+              onClick={onOpenQuickCreate}
+              className="px-2.5 py-1 rounded-md bg-[#5e6ad2] hover:bg-[#6f7be8] text-white text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm shadow-[#5e6ad2]/20"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ New Record</span>
+              <span className="text-[10px] opacity-75 font-mono ml-0.5">C</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={handleCopy}
