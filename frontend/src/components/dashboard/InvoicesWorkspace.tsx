@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { InvoiceItem } from "@/lib/dashboard-data";
+import { InvoiceItem, SupplierItem } from "@/lib/dashboard-data";
 import {
   FileText,
   ShieldAlert,
@@ -25,13 +25,15 @@ import { updateInvoiceDoc } from "@/lib/firestoreService";
 interface InvoicesWorkspaceProps {
   invoice: InvoiceItem | null;
   workspaceId: string;
-  onOpenQuickCreate?: (tab?: "investigation" | "supplier" | "upload" | "entity") => void;
+  suppliers?: SupplierItem[];
+  onOpenQuickCreate?: (tab?: "investigation" | "supplier" | "invoice" | "upload" | "entity") => void;
   onInvoiceUpdated?: (updated: InvoiceItem) => void;
 }
 
 export function InvoicesWorkspace({
   invoice,
   workspaceId,
+  suppliers = [],
   onOpenQuickCreate,
   onInvoiceUpdated,
 }: InvoicesWorkspaceProps) {
@@ -67,7 +69,18 @@ export function InvoicesWorkspace({
     );
   }
 
-  const isMismatch = invoice.matchStatus === "MISMATCH" || invoice.status === "Payment Held" || invoice.status === "Discrepancy";
+  const matchingSupplier = suppliers.find(
+    (s) => s.name.toLowerCase() === invoice.vendorName.toLowerCase()
+  );
+  const registeredAccount = matchingSupplier?.accountNumber || invoice.expectedAccount;
+  const registeredIfsc = matchingSupplier?.ifsc || invoice.expectedIfsc;
+  const registeredBranch = matchingSupplier?.bankBranch || "Master Vendor Profile";
+
+  const isMismatch =
+    invoice.matchStatus === "MISMATCH" ||
+    invoice.status === "Payment Held" ||
+    invoice.status === "Discrepancy" ||
+    (registeredAccount && registeredAccount !== invoice.payeeAccount);
 
   const handleCopy = (text: string) => {
     if (typeof window !== "undefined") {
@@ -265,11 +278,11 @@ export function InvoicesWorkspace({
               <div className="space-y-1 text-xs">
                 <div className="text-[#8a8f98]">Registered Account:</div>
                 <div className="font-mono text-white text-xs">
-                  {invoice.expectedAccount || "1111 2222 3333"}
+                  {registeredAccount || "No Account On Record"}
                 </div>
                 <div className="text-[#8a8f98] pt-1">Registered IFSC:</div>
                 <div className="font-mono text-white text-xs">
-                  {invoice.expectedIfsc || "HDFC0001234"} (HDFC Bank, Bandra West)
+                  {registeredIfsc || "N/A"} ({registeredBranch})
                 </div>
               </div>
             </div>

@@ -60,7 +60,7 @@ interface ContextualMiddlePaneProps {
   onSelectDossier?: (id: string) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
-  onOpenQuickCreate?: (tab?: "investigation" | "supplier" | "upload" | "entity") => void;
+  onOpenQuickCreate?: (tab?: "investigation" | "supplier" | "invoice" | "upload" | "entity") => void;
 }
 
 export function ContextualMiddlePane({
@@ -238,7 +238,7 @@ export function ContextualMiddlePane({
                   if (activeView === "suppliers") onOpenQuickCreate("supplier");
                   else if (activeView === "evidence" || activeView === "scamshield") onOpenQuickCreate("upload");
                   else if (activeView === "graph") onOpenQuickCreate("entity");
-                  else if (activeView === "invoices") onOpenQuickCreate("upload");
+                  else if (activeView === "invoices") onOpenQuickCreate("invoice");
                   else onOpenQuickCreate("investigation");
                 }}
                 className="px-2 py-0.5 rounded bg-[#5e6ad2] hover:bg-[#6f7be8] text-white text-[11px] font-medium flex items-center gap-1 transition-colors shadow-sm shadow-[#5e6ad2]/20"
@@ -757,7 +757,7 @@ export function ContextualMiddlePane({
             {filteredInvoices.length > 0 && onOpenQuickCreate && (
               <button
                 type="button"
-                onClick={() => onOpenQuickCreate("upload")}
+                onClick={() => onOpenQuickCreate("invoice")}
                 className="w-full mt-2 p-2 rounded-lg border border-dashed border-white/[0.08] hover:border-white/20 hover:bg-white/[0.02] text-xs text-[#8a8f98] hover:text-white flex items-center justify-center gap-1.5 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5 text-[#5e6ad2]" />
@@ -777,7 +777,7 @@ export function ContextualMiddlePane({
                 {onOpenQuickCreate && (
                   <button
                     type="button"
-                    onClick={() => onOpenQuickCreate("upload")}
+                    onClick={() => onOpenQuickCreate("invoice")}
                     className="px-3 py-1.5 rounded-lg bg-[#5e6ad2] hover:bg-[#6f7be8] text-white text-xs font-medium transition-colors"
                   >
                     + Ingest Invoice

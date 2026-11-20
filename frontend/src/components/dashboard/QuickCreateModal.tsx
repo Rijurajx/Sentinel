@@ -22,6 +22,9 @@ import {
   SupplierItem,
   EvidenceItem,
   EntityItem,
+  InvoiceItem,
+  InboxAlertItem,
+  ReviewItem,
 } from "@/lib/dashboard-data";
 import { verifySupplierBankDetails, analyzeThreatEvidence } from "@/lib/apiClient";
 
@@ -32,7 +35,9 @@ interface QuickCreateModalProps {
   onCreateSupplier?: (supplier: SupplierItem) => void;
   onCreateEvidence?: (evidence: EvidenceItem) => void;
   onCreateEntity?: (entity: EntityItem) => void;
-  initialAction?: "investigation" | "supplier" | "upload" | "entity";
+  onCreateInvoice?: (invoice: InvoiceItem, alert?: InboxAlertItem, review?: ReviewItem) => void;
+  suppliers?: SupplierItem[];
+  initialAction?: "investigation" | "supplier" | "invoice" | "upload" | "entity";
 }
 
 export function QuickCreateModal({
@@ -42,10 +47,12 @@ export function QuickCreateModal({
   onCreateSupplier,
   onCreateEvidence,
   onCreateEntity,
+  onCreateInvoice,
+  suppliers = [],
   initialAction = "investigation",
 }: QuickCreateModalProps) {
   const [selectedAction, setSelectedAction] = useState<
-    "investigation" | "supplier" | "upload" | "entity"
+    "investigation" | "supplier" | "invoice" | "upload" | "entity"
   >(initialAction);
 
   useEffect(() => {
@@ -65,6 +72,16 @@ export function QuickCreateModal({
   const [supIfsc, setSupIfsc] = useState("");
   const [supBranch, setSupBranch] = useState("");
   const [supInvoiced, setSupInvoiced] = useState("");
+
+  // Invoice State
+  const [invNum, setInvNum] = useState("");
+  const [invVendor, setInvVendor] = useState("");
+  const [invTotal, setInvTotal] = useState("");
+  const [invPayeeAcc, setInvPayeeAcc] = useState("");
+  const [invPayeeIfsc, setInvPayeeIfsc] = useState("");
+  const [invDueDate, setInvDueDate] = useState("Immediate");
+  const [invPo, setInvPo] = useState("PO-2026-001");
+  const [invDesc, setInvDesc] = useState("Vendor Invoice Goods / Services");
 
   // Evidence State
   const [evTitle, setEvTitle] = useState("");
@@ -173,13 +190,120 @@ export function QuickCreateModal({
         setSupIfsc("");
         setSupBranch("");
         setSupInvoiced("");
+      } else if (selectedAction === "invoice" && onCreateInvoice) {
+        if (!invNum.trim() || !invVendor.trim() || !invPayeeAcc.trim()) return;
+        const presentedIfsc = (invPayeeIfsc.trim() || "HDFC0001234").toUpperCase();
+        const presentedAccount = invPayeeAcc.trim();
+        const effectiveAmount = invTotal ? (invTotal.startsWith("$") ? invTotal : `$${invTotal}`) : "$10,000.00";
+
+        // Live FinGuard verification via Backend
+        const verification = await verifySupplierBankDetails({
+          supplier_name: invVendor.trim(),
+          account_number: presentedAccount,
+          ifsc_or_iban: presentedIfsc,
+        });
+
+        const matchingSupplier = suppliers.find(
+          (s) => s.name.toLowerCase() === invVendor.trim().toLowerCase()
+        );
+
+        const isAccountMismatch = Boolean(matchingSupplier && matchingSupplier.accountNumber.replace(/\s+/g, "") !== presentedAccount.replace(/\s+/g, ""));
+        const isIfscInvalid = !verification.format_valid || verification.risk_level === "CRITICAL";
+        const isHeld = isAccountMismatch || isIfscInvalid;
+
+        let alertToCreate: InboxAlertItem | undefined = undefined;
+        let reviewToCreate: ReviewItem | undefined = undefined;
+
+        if (isHeld) {
+          alertToCreate = {
+            id: `ALRT-${Math.floor(100 + Math.random() * 900)}`,
+            title: `Payment Hold: ${invNum.trim()} Coordinate Discrepancy (${effectiveAmount})`,
+            source: "FinGuard Gateway",
+            severity: "Critical",
+            status: "Action Required",
+            timestamp: "Just now",
+            summary: isAccountMismatch
+              ? `Invoice payee account ${presentedAccount} does not match master supplier record (${matchingSupplier?.accountNumber}).`
+              : `Clearing code ${presentedIfsc} failed RBI scheduled bank checksum.`,
+            affectedEntity: invVendor.trim(),
+            amount: effectiveAmount,
+            payloadSnippet: JSON.stringify({
+              invoice_id: invNum.trim(),
+              vendor: invVendor.trim(),
+              payee_account: presentedAccount,
+              ifsc: presentedIfsc,
+              verification_status: verification.match_status,
+            }),
+            recommendedAction: "Execute secondary maker-checker signoff and freeze disbursement.",
+          };
+
+          reviewToCreate = {
+            id: `REV-${Math.floor(100 + Math.random() * 900)}`,
+            title: `Dual-Auth Required: ${invVendor.trim()} Wire (${effectiveAmount})`,
+            type: "Payment Hold Override",
+            requesterName: "Accounts Payable Gateway",
+            requesterRole: "Automated Wire Ingestion",
+            requestedDate: "Just now",
+            status: "Pending Dual-Auth",
+            riskTier: "Critical",
+            amount: effectiveAmount,
+            targetSupplier: invVendor.trim(),
+            discrepancySummary: verification.findings.join(" • ") || "Payee coordinates failed verification.",
+            currentCoordinates: {
+              accountNumber: matchingSupplier?.accountNumber || "Unregistered Profile",
+              ifsc: matchingSupplier?.ifsc || "N/A",
+              bankName: matchingSupplier?.bankBranch || "Master Vendor Profile",
+            },
+            proposedCoordinates: {
+              accountNumber: presentedAccount,
+              ifsc: presentedIfsc,
+              bankName: verification.findings[0] || "Destination Bank",
+            },
+            checks: [
+              { name: "RBI Scheduled Bank Checksum", passed: verification.format_valid, detail: verification.findings[0] || "IFSC verified" },
+              { name: "Master Supplier Match", passed: !isAccountMismatch, detail: matchingSupplier ? (isAccountMismatch ? "Account does not match master file" : "Matches registered profile") : "Vendor not in registry" },
+            ],
+          };
+        }
+
+        const newInvoice: InvoiceItem = {
+          id: invNum.trim(),
+          vendorName: invVendor.trim(),
+          amount: effectiveAmount,
+          invoiceDate: "Today",
+          dueDate: invDueDate.trim() || "Net 30",
+          status: isHeld ? "Payment Held" : "Cleared",
+          payeeAccount: presentedAccount,
+          payeeIfsc: presentedIfsc,
+          expectedAccount: matchingSupplier?.accountNumber,
+          expectedIfsc: matchingSupplier?.ifsc,
+          bankBranch: verification.findings[0] || "Destination Branch",
+          matchStatus: isHeld ? "MISMATCH" : "VERIFIED",
+          discrepancyNote: isHeld ? (isAccountMismatch ? "Account diverged from master supplier record." : "Clearing code failed validation.") : "All coordinates verified.",
+          poNumber: invPo.trim() || "PO-UNLINKED",
+          items: [
+            {
+              description: invDesc.trim() || "Invoiced goods or service clearance",
+              quantity: 1,
+              unitPrice: effectiveAmount,
+              total: effectiveAmount,
+            },
+          ],
+        };
+
+        onCreateInvoice(newInvoice, alertToCreate, reviewToCreate);
+        setInvNum("");
+        setInvVendor("");
+        setInvTotal("");
+        setInvPayeeAcc("");
+        setInvPayeeIfsc("");
       } else if (selectedAction === "upload" && onCreateEvidence) {
         if (!evTitle.trim() && !selectedFile) return;
 
         const effectiveTitle = evTitle.trim() || selectedFile?.name || "Uploaded_Evidence_Document";
         const analysisPrompt = `${effectiveTitle}. ${extractedOrInputText}`.trim();
 
-        // Live ScamShield Analysis via Backend (with multimodal file support)
+        // Live ScamShield Analysis via Backend
         const analysis = await analyzeThreatEvidence({
           content: analysisPrompt,
           evidence_type: evType.toLowerCase(),
@@ -253,7 +377,7 @@ export function QuickCreateModal({
         </div>
 
         {/* Action Selector Pills */}
-        <div className="grid grid-cols-4 gap-1.5 my-4">
+        <div className="grid grid-cols-5 gap-1.5 my-4">
           <button
             type="button"
             onClick={() => setSelectedAction("investigation")}
@@ -264,7 +388,7 @@ export function QuickCreateModal({
             }`}
           >
             <Briefcase className="w-3.5 h-3.5 mb-1 text-[#5e6ad2]" />
-            <div className="font-medium text-[11px] truncate">Investigation</div>
+            <div className="font-medium text-[11px] truncate">Case</div>
           </button>
 
           <button
@@ -278,6 +402,19 @@ export function QuickCreateModal({
           >
             <Building2 className="w-3.5 h-3.5 mb-1 text-[#4ebe82]" />
             <div className="font-medium text-[11px] truncate">Supplier</div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedAction("invoice")}
+            className={`p-2 rounded-lg border text-left text-xs transition-colors ${
+              selectedAction === "invoice"
+                ? "bg-white/[0.08] border-white/20 text-white"
+                : "bg-white/[0.02] border-white/[0.06] text-[#8a8f98] hover:bg-white/[0.04]"
+            }`}
+          >
+            <CreditCard className="w-3.5 h-3.5 mb-1 text-[#f0b96d]" />
+            <div className="font-medium text-[11px] truncate">Invoice</div>
           </button>
 
           <button
@@ -353,11 +490,11 @@ export function QuickCreateModal({
           {selectedAction === "supplier" && (
             <div className="space-y-3 animate-fade-in">
               <div className="space-y-1">
-                <label className="text-[11px] text-[#8a8f98]">Supplier Legal Name</label>
+                <label className="text-[11px] text-[#8a8f98]">Supplier / Organization Name</label>
                 <input
                   type="text"
                   autoFocus
-                  placeholder="e.g. Veritas Global Logistics Pvt Ltd"
+                  placeholder="e.g. Quantum Computing Solutions LLC"
                   value={supName}
                   onChange={(e) => setSupName(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-white/20"
@@ -366,33 +503,33 @@ export function QuickCreateModal({
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[11px] text-[#8a8f98]">Master Bank Account Number</label>
+                  <label className="text-[11px] text-[#8a8f98]">Bank Account Number</label>
                   <input
                     type="text"
-                    placeholder="e.g. 987654321098"
+                    placeholder="e.g. 5566 7788 9900"
                     value={supAccount}
                     onChange={(e) => setSupAccount(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-white/20 font-mono"
+                    className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs font-mono text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-white/20"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] text-[#8a8f98]">Master IFSC Code</label>
+                  <label className="text-[11px] text-[#8a8f98]">IFSC / Routing / IBAN</label>
                   <input
                     type="text"
-                    placeholder="e.g. HDFC0001234"
+                    placeholder="e.g. HDFC0001234 or BARC0001"
                     value={supIfsc}
-                    onChange={(e) => setSupIfsc(e.target.value.toUpperCase())}
-                    className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-white/20 font-mono"
+                    onChange={(e) => setSupIfsc(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs font-mono text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-white/20"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[11px] text-[#8a8f98]">Bank / Branch</label>
+                  <label className="text-[11px] text-[#8a8f98]">Branch Details (Optional)</label>
                   <input
                     type="text"
-                    placeholder="HDFC Bank Commercial"
+                    placeholder="e.g. Mumbai Main Branch"
                     value={supBranch}
                     onChange={(e) => setSupBranch(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-white/20"
@@ -412,7 +549,110 @@ export function QuickCreateModal({
             </div>
           )}
 
-          {/* TAB 3: EVIDENCE / MULTIMODAL INGESTION */}
+          {/* TAB 3: INVOICE */}
+          {selectedAction === "invoice" && (
+            <div className="space-y-3 animate-fade-in">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] text-[#8a8f98]">Invoice Number</label>
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="e.g. INV-2026-9021"
+                    value={invNum}
+                    onChange={(e) => setInvNum(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-white/20 font-mono"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] text-[#8a8f98]">Vendor / Supplier</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Apex Logistics International"
+                    value={invVendor}
+                    onChange={(e) => setInvVendor(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-white/20"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] text-[#8a8f98]">Settlement Amount</label>
+                  <input
+                    type="text"
+                    placeholder="$485,000.00"
+                    value={invTotal}
+                    onChange={(e) => setInvTotal(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-white/20 font-mono"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] text-[#8a8f98]">Payment Due Date</label>
+                  <input
+                    type="text"
+                    placeholder="Immediate (Within 4 Hours)"
+                    value={invDueDate}
+                    onChange={(e) => setInvDueDate(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-white/20"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] text-[#8a8f98]">Payee Account (On Invoice)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 998877665544"
+                    value={invPayeeAcc}
+                    onChange={(e) => setInvPayeeAcc(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs font-mono text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-white/20"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] text-[#8a8f98]">Payee IFSC / IBAN Code</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. FAKEX009999 or HDFC0001234"
+                    value={invPayeeIfsc}
+                    onChange={(e) => setInvPayeeIfsc(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs font-mono text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-white/20"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] text-[#8a8f98]">PO Reference</label>
+                  <input
+                    type="text"
+                    placeholder="PO-2026-9901"
+                    value={invPo}
+                    onChange={(e) => setInvPo(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs font-mono text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-white/20"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] text-[#8a8f98]">Line Item Description</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Express Air Freight Priority Dispatch"
+                    value={invDesc}
+                    onChange={(e) => setInvDesc(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-white/20"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: EVIDENCE / MULTIMODAL INGESTION */}
           {selectedAction === "upload" && (
             <div className="space-y-3 animate-fade-in">
               {/* Drag & Drop File Upload Area */}
@@ -550,7 +790,7 @@ export function QuickCreateModal({
             </div>
           )}
 
-          {/* TAB 4: ENTITY */}
+          {/* TAB 5: ENTITY */}
           {selectedAction === "entity" && (
             <div className="space-y-3 animate-fade-in">
               <div className="space-y-1">
@@ -617,7 +857,15 @@ export function QuickCreateModal({
                   <span>Verifying & Saving...</span>
                 </>
               ) : (
-                <span>Create Record</span>
+                <span>
+                  {selectedAction === "invoice"
+                    ? "Ingest & Verify Invoice"
+                    : selectedAction === "supplier"
+                    ? "Register & Check Bank"
+                    : selectedAction === "upload"
+                    ? "Analyze with ScamShield"
+                    : "Create Record"}
+                </span>
               )}
             </button>
           </div>

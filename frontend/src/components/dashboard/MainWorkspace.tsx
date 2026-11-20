@@ -44,7 +44,7 @@ interface MainWorkspaceProps {
   onToggleStar?: () => void;
   isStarred?: boolean;
   onLoadDemoTelemetry?: () => void;
-  onOpenQuickCreate?: (tab?: "investigation" | "supplier" | "upload" | "entity") => void;
+  onOpenQuickCreate?: (tab?: "investigation" | "supplier" | "invoice" | "upload" | "entity") => void;
   suppliers?: SupplierItem[];
   evidenceList?: EvidenceItem[];
   entities?: EntityItem[];

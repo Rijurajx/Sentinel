@@ -285,7 +285,7 @@ export async function addInvoiceDoc(
   invoice: InvoiceItem
 ): Promise<void> {
   const localKey = `sentinel_${workspaceId}_invoices`;
-  const existing = getLocalCache<InvoiceItem>(localKey, INITIAL_INVOICES);
+  const existing = getLocalCache<InvoiceItem>(localKey, []);
   setLocalCache(localKey, [invoice, ...existing.filter((i) => i.id !== invoice.id)]);
 
   if (isFirebaseConfigured && db) {
@@ -318,17 +318,12 @@ export function subscribeInvoices(
         (snapshot) => {
           const items: InvoiceItem[] = [];
           snapshot.forEach((d) => items.push(d.data() as InvoiceItem));
-          if (items.length === 0) {
-            INITIAL_INVOICES.forEach((inv) => addInvoiceDoc(workspaceId, inv));
-            onUpdate(INITIAL_INVOICES);
-          } else {
-            setLocalCache(localKey, items);
-            onUpdate(items);
-          }
+          setLocalCache(localKey, items);
+          onUpdate(items);
         },
         (error) => {
           console.warn("Firestore invoices snapshot error:", error);
-          onUpdate(getLocalCache<InvoiceItem>(localKey, INITIAL_INVOICES));
+          onUpdate(getLocalCache<InvoiceItem>(localKey, []));
         }
       );
     } catch (e) {
@@ -336,7 +331,7 @@ export function subscribeInvoices(
     }
   }
 
-  const cached = getLocalCache<InvoiceItem>(localKey, INITIAL_INVOICES);
+  const cached = getLocalCache<InvoiceItem>(localKey, []);
   onUpdate(cached);
   return () => {};
 }
@@ -350,7 +345,7 @@ export async function addInboxAlertDoc(
   alert: InboxAlertItem
 ): Promise<void> {
   const localKey = `sentinel_${workspaceId}_inbox_alerts`;
-  const existing = getLocalCache<InboxAlertItem>(localKey, INITIAL_INBOX_ALERTS);
+  const existing = getLocalCache<InboxAlertItem>(localKey, []);
   setLocalCache(localKey, [alert, ...existing.filter((a) => a.id !== alert.id)]);
 
   if (isFirebaseConfigured && db) {
@@ -383,17 +378,12 @@ export function subscribeInboxAlerts(
         (snapshot) => {
           const items: InboxAlertItem[] = [];
           snapshot.forEach((d) => items.push(d.data() as InboxAlertItem));
-          if (items.length === 0) {
-            INITIAL_INBOX_ALERTS.forEach((a) => addInboxAlertDoc(workspaceId, a));
-            onUpdate(INITIAL_INBOX_ALERTS);
-          } else {
-            setLocalCache(localKey, items);
-            onUpdate(items);
-          }
+          setLocalCache(localKey, items);
+          onUpdate(items);
         },
         (error) => {
           console.warn("Firestore alerts snapshot error:", error);
-          onUpdate(getLocalCache<InboxAlertItem>(localKey, INITIAL_INBOX_ALERTS));
+          onUpdate(getLocalCache<InboxAlertItem>(localKey, []));
         }
       );
     } catch (e) {
@@ -401,7 +391,7 @@ export function subscribeInboxAlerts(
     }
   }
 
-  const cached = getLocalCache<InboxAlertItem>(localKey, INITIAL_INBOX_ALERTS);
+  const cached = getLocalCache<InboxAlertItem>(localKey, []);
   onUpdate(cached);
   return () => {};
 }
@@ -415,7 +405,7 @@ export async function addReviewDoc(
   review: ReviewItem
 ): Promise<void> {
   const localKey = `sentinel_${workspaceId}_reviews`;
-  const existing = getLocalCache<ReviewItem>(localKey, INITIAL_REVIEWS);
+  const existing = getLocalCache<ReviewItem>(localKey, []);
   setLocalCache(localKey, [review, ...existing.filter((r) => r.id !== review.id)]);
 
   if (isFirebaseConfigured && db) {
@@ -448,17 +438,12 @@ export function subscribeReviews(
         (snapshot) => {
           const items: ReviewItem[] = [];
           snapshot.forEach((d) => items.push(d.data() as ReviewItem));
-          if (items.length === 0) {
-            INITIAL_REVIEWS.forEach((r) => addReviewDoc(workspaceId, r));
-            onUpdate(INITIAL_REVIEWS);
-          } else {
-            setLocalCache(localKey, items);
-            onUpdate(items);
-          }
+          setLocalCache(localKey, items);
+          onUpdate(items);
         },
         (error) => {
           console.warn("Firestore reviews snapshot error:", error);
-          onUpdate(getLocalCache<ReviewItem>(localKey, INITIAL_REVIEWS));
+          onUpdate(getLocalCache<ReviewItem>(localKey, []));
         }
       );
     } catch (e) {
@@ -466,7 +451,7 @@ export function subscribeReviews(
     }
   }
 
-  const cached = getLocalCache<ReviewItem>(localKey, INITIAL_REVIEWS);
+  const cached = getLocalCache<ReviewItem>(localKey, []);
   onUpdate(cached);
   return () => {};
 }
@@ -480,7 +465,7 @@ export async function addDossierDoc(
   dossier: DossierItem
 ): Promise<void> {
   const localKey = `sentinel_${workspaceId}_dossiers`;
-  const existing = getLocalCache<DossierItem>(localKey, INITIAL_DOSSIERS);
+  const existing = getLocalCache<DossierItem>(localKey, []);
   setLocalCache(localKey, [dossier, ...existing.filter((d) => d.id !== dossier.id)]);
 
   if (isFirebaseConfigured && db) {
@@ -513,17 +498,12 @@ export function subscribeDossiers(
         (snapshot) => {
           const items: DossierItem[] = [];
           snapshot.forEach((d) => items.push(d.data() as DossierItem));
-          if (items.length === 0) {
-            INITIAL_DOSSIERS.forEach((d) => addDossierDoc(workspaceId, d));
-            onUpdate(INITIAL_DOSSIERS);
-          } else {
-            setLocalCache(localKey, items);
-            onUpdate(items);
-          }
+          setLocalCache(localKey, items);
+          onUpdate(items);
         },
         (error) => {
           console.warn("Firestore dossiers snapshot error:", error);
-          onUpdate(getLocalCache<DossierItem>(localKey, INITIAL_DOSSIERS));
+          onUpdate(getLocalCache<DossierItem>(localKey, []));
         }
       );
     } catch (e) {
@@ -531,10 +511,45 @@ export function subscribeDossiers(
     }
   }
 
-  const cached = getLocalCache<DossierItem>(localKey, INITIAL_DOSSIERS);
+  const cached = getLocalCache<DossierItem>(localKey, []);
   onUpdate(cached);
   return () => {};
 }
+
+/* =========================================================================
+   9. MANUAL SIMULATION SEEDER (EXPLICIT ON-DEMAND ONLY)
+========================================================================= */
+export async function seedBusinessDemoData(workspaceId: string): Promise<void> {
+  INITIAL_INVESTIGATIONS.forEach((inv) => addInvestigationDoc(workspaceId, inv));
+  INITIAL_SUPPLIERS.forEach((sup) => addSupplierDoc(workspaceId, sup));
+  INITIAL_EVIDENCE.forEach((ev) => addEvidenceDoc(workspaceId, ev));
+  INITIAL_INVOICES.forEach((inv) => addInvoiceDoc(workspaceId, inv));
+  INITIAL_ENTITIES.forEach((ent) => addEntityDoc(workspaceId, ent));
+  INITIAL_INBOX_ALERTS.forEach((alrt) => addInboxAlertDoc(workspaceId, alrt));
+  INITIAL_REVIEWS.forEach((rev) => addReviewDoc(workspaceId, rev));
+  INITIAL_DOSSIERS.forEach((dos) => addDossierDoc(workspaceId, dos));
+}
+
+export function clearAllWorkspaceData(workspaceId: string): void {
+  const keys = [
+    `sentinel_${workspaceId}_investigations`,
+    `sentinel_${workspaceId}_suppliers`,
+    `sentinel_${workspaceId}_evidence`,
+    `sentinel_${workspaceId}_entities`,
+    `sentinel_${workspaceId}_invoices`,
+    `sentinel_${workspaceId}_inbox_alerts`,
+    `sentinel_${workspaceId}_reviews`,
+    `sentinel_${workspaceId}_dossiers`,
+  ];
+  if (typeof window !== "undefined") {
+    keys.forEach((k) => {
+      localStorage.removeItem(k);
+      localStorage.setItem(k, JSON.stringify([]));
+    });
+  }
+}
+
+
 
 
 

@@ -39,6 +39,9 @@ import {
   addSupplierDoc,
   addEvidenceDoc,
   addEntityDoc,
+  addInvoiceDoc,
+  addInboxAlertDoc,
+  addReviewDoc,
 } from "@/lib/firestoreService";
 
 export function DashboardShell() {
@@ -84,19 +87,21 @@ export function DashboardShell() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isQuickCreateOpen, setIsQuickCreateOpen] = useState(false);
   const [quickCreateTab, setQuickCreateTab] = useState<
-    "investigation" | "supplier" | "upload" | "entity"
+    "investigation" | "supplier" | "invoice" | "upload" | "entity"
   >("investigation");
   const [isStarred, setIsStarred] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   const handleOpenQuickCreate = (
-    tab?: "investigation" | "supplier" | "upload" | "entity"
+    tab?: "investigation" | "supplier" | "invoice" | "upload" | "entity"
   ) => {
     if (tab) {
       setQuickCreateTab(tab);
     } else if (activeView === "suppliers") {
       setQuickCreateTab("supplier");
-    } else if (activeView === "evidence" || activeView === "scamshield" || activeView === "invoices") {
+    } else if (activeView === "invoices") {
+      setQuickCreateTab("invoice");
+    } else if (activeView === "evidence" || activeView === "scamshield") {
       setQuickCreateTab("upload");
     } else if (activeView === "graph") {
       setQuickCreateTab("entity");
@@ -359,6 +364,22 @@ export function DashboardShell() {
     setSelectedEntityId(entity.id);
   };
 
+  const handleCreateInvoice = async (
+    invoice: InvoiceItem,
+    alert?: InboxAlertItem,
+    review?: ReviewItem
+  ) => {
+    await addInvoiceDoc(activeWsId, invoice);
+    setSelectedInvoiceId(invoice.id);
+    if (alert) {
+      await addInboxAlertDoc(activeWsId, alert);
+    }
+    if (review) {
+      await addReviewDoc(activeWsId, review);
+    }
+    setActiveView("invoices");
+  };
+
   const handleAlertToInvestigation = (alert: InboxAlertItem) => {
     handleCreateInvestigation(
       `Investigate Alert: ${alert.title}`,
@@ -515,6 +536,7 @@ export function DashboardShell() {
         <InvoicesWorkspace
           invoice={currentInvoice}
           workspaceId={activeWsId}
+          suppliers={suppliers}
           onOpenQuickCreate={handleOpenQuickCreate}
           onInvoiceUpdated={(updated) => {
             setInvoices((prev) => prev.map((inv) => (inv.id === updated.id ? updated : inv)));
@@ -576,6 +598,8 @@ export function DashboardShell() {
         onCreateSupplier={handleCreateSupplier}
         onCreateEvidence={handleCreateEvidence}
         onCreateEntity={handleCreateEntity}
+        onCreateInvoice={handleCreateInvoice}
+        suppliers={suppliers}
       />
     </div>
   );

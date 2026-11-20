@@ -27,7 +27,7 @@ import { updateEvidenceDoc } from "@/lib/firestoreService";
 interface EvidenceWorkspaceProps {
   evidence: EvidenceItem | null;
   workspaceId: string;
-  onOpenQuickCreate?: (tab?: "investigation" | "supplier" | "upload" | "entity") => void;
+  onOpenQuickCreate?: (tab?: "investigation" | "supplier" | "invoice" | "upload" | "entity") => void;
   onEvidenceUpdated?: (updated: EvidenceItem) => void;
 }
 
@@ -127,9 +127,9 @@ export function EvidenceWorkspace({
     if (onEvidenceUpdated) onEvidenceUpdated(updated);
   };
 
-  // Demo file source URLs
-  const demoImageSrc = evidence.fileData || "/demo/Executive_Impersonation_Wire_Screenshot.png";
-  const demoPdfSrc = evidence.fileData || "/demo/Urgent_Apex_Logistics_Invoice_INV-8891.pdf";
+  // Actual file source data
+  const hasFileData = Boolean(evidence.fileData);
+  const fileSourceUrl = evidence.fileData || "";
 
   return (
     <main className="flex-1 h-screen bg-[#08090a] overflow-y-auto flex flex-col z-10 select-text transition-all duration-300">
@@ -239,29 +239,31 @@ export function EvidenceWorkspace({
                       <ZoomIn className="w-3.5 h-3.5" />
                     </button>
                   )}
-                  <a
-                    href={isPdf ? demoPdfSrc : demoImageSrc}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-1 rounded text-[#8a8f98] hover:text-white hover:bg-white/[0.04] transition-colors flex items-center gap-1 text-[11px]"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Open File</span>
-                  </a>
+                  {hasFileData && (
+                    <a
+                      href={fileSourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-1 rounded text-[#8a8f98] hover:text-white hover:bg-white/[0.04] transition-colors flex items-center gap-1 text-[11px]"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Open File</span>
+                    </a>
+                  )}
                 </div>
               </div>
 
               {/* Document Rendering Frame */}
               <div className="p-4 bg-[#08090a] min-h-[420px] flex items-center justify-center">
-                {isImage ? (
+                {isImage && hasFileData ? (
                   <div className={`relative transition-all duration-200 ${activeZoom ? "scale-110" : ""}`}>
                     <img
-                      src={demoImageSrc}
+                      src={fileSourceUrl}
                       alt={evidence.title}
                       className="max-h-[520px] w-auto rounded-lg border border-white/10 shadow-2xl object-contain mx-auto"
                     />
                   </div>
-                ) : isPdf ? (
+                ) : isPdf && hasFileData ? (
                   <div className="w-full space-y-4">
                     <div className="p-6 rounded-lg border border-white/10 bg-white/[0.02] flex flex-col items-center justify-center text-center space-y-3">
                       <div className="w-12 h-12 rounded-xl bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center text-[#5e6ad2]">
@@ -275,7 +277,7 @@ export function EvidenceWorkspace({
                       </div>
                       <div className="flex items-center gap-2 pt-2">
                         <a
-                          href={demoPdfSrc}
+                          href={fileSourceUrl}
                           target="_blank"
                           rel="noreferrer"
                           className="px-3 py-1.5 rounded-lg bg-[#5e6ad2] hover:bg-[#6f7be8] text-white text-xs font-medium inline-flex items-center gap-1.5 transition-colors"

@@ -25,7 +25,7 @@ import { updateSupplierDoc } from "@/lib/firestoreService";
 interface SupplierWorkspaceProps {
   supplier: SupplierItem | null;
   workspaceId: string;
-  onOpenQuickCreate?: (tab?: "investigation" | "supplier" | "upload" | "entity") => void;
+  onOpenQuickCreate?: (tab?: "investigation" | "supplier" | "invoice" | "upload" | "entity") => void;
   onSupplierUpdated?: (updated: SupplierItem) => void;
 }
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth, UserProfile } from "@/context/AuthContext";
+import { clearAllWorkspaceData, seedBusinessDemoData } from "@/lib/firestoreService";
 import {
   User,
   Building2,
@@ -385,6 +386,50 @@ export function ProfileSettingsPane({ onClose }: ProfileSettingsPaneProps) {
           <div className="flex items-center justify-between text-xs">
             <span className="text-[#8a8f98]">Deployment Region</span>
             <span className="text-[#f7f8f8]">{activeWorkspace?.region || "European Union"}</span>
+          </div>
+        </section>
+
+        {/* Workspace Operations & Real Data Management */}
+        <section className="space-y-4 pt-4 border-t border-white/[0.08]">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#8a8f98]">
+            <Database className="w-3.5 h-3.5" />
+            <span>Workspace Operations & Data Hygiene</span>
+          </div>
+          <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.06] space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs font-medium text-white">Reset to Clean Workspace (0 Records)</div>
+                <div className="text-[11px] text-[#8a8f98]">Purges local cache and starts empty for real-world business operation.</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm("Reset workspace to 0 records? All cached data will be cleared.")) {
+                    clearAllWorkspaceData(activeWorkspace?.id || "default-workspace");
+                    window.location.reload();
+                  }
+                }}
+                className="px-3 py-1.5 rounded-md bg-[#eb5757]/10 hover:bg-[#eb5757]/20 border border-[#eb5757]/20 text-[#eb5757] text-xs font-medium transition-colors"
+              >
+                Clear All Records
+              </button>
+            </div>
+            <div className="pt-2 border-t border-white/[0.04] flex items-center justify-between">
+              <div>
+                <div className="text-xs font-medium text-white">Load Demo Simulation Suite</div>
+                <div className="text-[11px] text-[#8a8f98]">Populate sample supplier, invoice discrepancy, and threat dossier for testing.</div>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  await seedBusinessDemoData(activeWorkspace?.id || "default-workspace");
+                  window.location.reload();
+                }}
+                className="px-3 py-1.5 rounded-md bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] text-white text-xs font-medium transition-colors"
+              >
+                Load Simulation
+              </button>
+            </div>
           </div>
         </section>
 

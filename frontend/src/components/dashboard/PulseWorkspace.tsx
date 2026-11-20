@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   InvestigationItem,
   SupplierItem,
@@ -46,6 +46,24 @@ export function PulseWorkspace({
   const supplierDiscrepancyCount = suppliers.filter((s) => s.status === "Discrepancy Detected").length;
   const invoiceHeldCount = invoices.filter((inv) => inv.status === "Payment Held" || inv.status === "Discrepancy").length;
 
+  // Real-time calculation of all capital protected from intercepted transactions
+  const totalProtectedFormatted = useMemo(() => {
+    let sum = 0;
+    invoices.forEach((inv) => {
+      if (inv.status === "Payment Held" || inv.status === "Discrepancy") {
+        const num = parseFloat(inv.amount.replace(/[^0-9.]/g, ""));
+        if (!isNaN(num)) sum += num;
+      }
+    });
+    investigations.forEach((inv) => {
+      if ((inv.status === "Blocked" || inv.riskLevel === "Critical") && inv.amount) {
+        const num = parseFloat(inv.amount.replace(/[^0-9.]/g, ""));
+        if (!isNaN(num)) sum += num;
+      }
+    });
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(sum);
+  }, [invoices, investigations]);
+
   return (
     <main className="flex-1 h-screen bg-[#08090a] overflow-y-auto flex flex-col z-10 select-text transition-all duration-300">
       {/* Top Header Bar */}
@@ -80,7 +98,7 @@ export function PulseWorkspace({
               <span>Capital Protected</span>
               <DollarSign className="w-3.5 h-3.5 text-[#4ebe82]" />
             </div>
-            <div className="text-2xl font-semibold text-white font-mono">$485,000.00</div>
+            <div className="text-2xl font-semibold text-white font-mono">{totalProtectedFormatted}</div>
             <div className="text-[11px] text-[#4ebe82] flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3" />
               <span>0 Fraudulent Outflows Released</span>
