@@ -9,6 +9,9 @@ import { SupplierWorkspace } from "./SupplierWorkspace";
 import { EvidenceWorkspace } from "./EvidenceWorkspace";
 import { InvoicesWorkspace } from "./InvoicesWorkspace";
 import { PulseWorkspace } from "./PulseWorkspace";
+import { InboxWorkspace } from "./InboxWorkspace";
+import { ReviewWorkspace } from "./ReviewWorkspace";
+import { DossierWorkspace } from "./DossierWorkspace";
 import { ProfileSettingsPane } from "./ProfileSettingsPane";
 import { CommandPalette } from "./CommandPalette";
 import { QuickCreateModal } from "./QuickCreateModal";
@@ -19,6 +22,9 @@ import {
   EvidenceItem,
   EntityItem,
   InvoiceItem,
+  InboxAlertItem,
+  ReviewItem,
+  DossierItem,
 } from "@/lib/dashboard-data";
 import {
   subscribeInvestigations,
@@ -26,6 +32,9 @@ import {
   subscribeEvidence,
   subscribeEntities,
   subscribeInvoices,
+  subscribeInboxAlerts,
+  subscribeReviews,
+  subscribeDossiers,
   addInvestigationDoc,
   addSupplierDoc,
   addEvidenceDoc,
@@ -54,6 +63,9 @@ export function DashboardShell() {
   const [evidenceList, setEvidenceList] = useState<EvidenceItem[]>([]);
   const [entities, setEntities] = useState<EntityItem[]>([]);
   const [invoices, setInvoices] = useState<InvoiceItem[]>([]);
+  const [alerts, setAlerts] = useState<InboxAlertItem[]>([]);
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
+  const [dossiers, setDossiers] = useState<DossierItem[]>([]);
 
   const activeWsId = activeWorkspace?.id || "default-workspace";
 
@@ -63,6 +75,9 @@ export function DashboardShell() {
   const [selectedEvidenceId, setSelectedEvidenceId] = useState<string>("");
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>("");
   const [selectedEntityId, setSelectedEntityId] = useState<string>("");
+  const [selectedAlertId, setSelectedAlertId] = useState<string>("");
+  const [selectedReviewId, setSelectedReviewId] = useState<string>("");
+  const [selectedDossierId, setSelectedDossierId] = useState<string>("");
 
   const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
   const [isMiddleCollapsed, setIsMiddleCollapsed] = useState(false);
@@ -135,48 +150,49 @@ export function DashboardShell() {
     const unsubSup = subscribeSuppliers(activeWsId, (items) => {
       setSuppliers(items);
       if (items.length > 0) {
-        setSelectedSupplierId((prev) => {
-          if (!prev || !items.some((s) => s.id === prev)) {
-            return items[0].id;
-          }
-          return prev;
-        });
+        setSelectedSupplierId((prev) => (!prev || !items.some((s) => s.id === prev) ? items[0].id : prev));
       }
     });
 
     const unsubEv = subscribeEvidence(activeWsId, (items) => {
       setEvidenceList(items);
       if (items.length > 0) {
-        setSelectedEvidenceId((prev) => {
-          if (!prev || !items.some((e) => e.id === prev)) {
-            return items[0].id;
-          }
-          return prev;
-        });
+        setSelectedEvidenceId((prev) => (!prev || !items.some((e) => e.id === prev) ? items[0].id : prev));
       }
     });
 
     const unsubEnt = subscribeEntities(activeWsId, (items) => {
       setEntities(items);
       if (items.length > 0) {
-        setSelectedEntityId((prev) => {
-          if (!prev || !items.some((e) => e.id === prev)) {
-            return items[0].id;
-          }
-          return prev;
-        });
+        setSelectedEntityId((prev) => (!prev || !items.some((e) => e.id === prev) ? items[0].id : prev));
       }
     });
 
     const unsubInvoices = subscribeInvoices(activeWsId, (items) => {
       setInvoices(items);
       if (items.length > 0) {
-        setSelectedInvoiceId((prev) => {
-          if (!prev || !items.some((inv) => inv.id === prev)) {
-            return items[0].id;
-          }
-          return prev;
-        });
+        setSelectedInvoiceId((prev) => (!prev || !items.some((inv) => inv.id === prev) ? items[0].id : prev));
+      }
+    });
+
+    const unsubAlerts = subscribeInboxAlerts(activeWsId, (items) => {
+      setAlerts(items);
+      if (items.length > 0) {
+        setSelectedAlertId((prev) => (!prev || !items.some((a) => a.id === prev) ? items[0].id : prev));
+      }
+    });
+
+    const unsubReviews = subscribeReviews(activeWsId, (items) => {
+      setReviews(items);
+      if (items.length > 0) {
+        setSelectedReviewId((prev) => (!prev || !items.some((r) => r.id === prev) ? items[0].id : prev));
+      }
+    });
+
+    const unsubDossiers = subscribeDossiers(activeWsId, (items) => {
+      setDossiers(items);
+      if (items.length > 0) {
+        setSelectedDossierId((prev) => (!prev || !items.some((d) => d.id === prev) ? items[0].id : prev));
       }
     });
 
@@ -186,6 +202,9 @@ export function DashboardShell() {
       unsubEv();
       unsubEnt();
       unsubInvoices();
+      unsubAlerts();
+      unsubReviews();
+      unsubDossiers();
     };
   }, [activeWsId]);
 
@@ -205,6 +224,18 @@ export function DashboardShell() {
   const currentInvoice =
     invoices.find((inv) => inv.id === selectedInvoiceId) ||
     (invoices.length > 0 ? invoices[0] : null);
+
+  const currentAlert =
+    alerts.find((a) => a.id === selectedAlertId) ||
+    (alerts.length > 0 ? alerts[0] : null);
+
+  const currentReview =
+    reviews.find((r) => r.id === selectedReviewId) ||
+    (reviews.length > 0 ? reviews[0] : null);
+
+  const currentDossier =
+    dossiers.find((d) => d.id === selectedDossierId) ||
+    (dossiers.length > 0 ? dossiers[0] : null);
 
   // Add Comment handler
   const handleAddComment = async (commentText: string) => {
@@ -310,6 +341,7 @@ export function DashboardShell() {
 
     await addInvestigationDoc(activeWsId, newInv);
     setSelectedInvestigationId(newId);
+    setActiveView("investigations");
   };
 
   const handleCreateSupplier = async (supplier: SupplierItem) => {
@@ -325,6 +357,14 @@ export function DashboardShell() {
   const handleCreateEntity = async (entity: EntityItem) => {
     await addEntityDoc(activeWsId, entity);
     setSelectedEntityId(entity.id);
+  };
+
+  const handleAlertToInvestigation = (alert: InboxAlertItem) => {
+    handleCreateInvestigation(
+      `Investigate Alert: ${alert.title}`,
+      alert.affectedEntity,
+      alert.amount || "$485,000.00"
+    );
   };
 
   if (isLoading || (!activeWorkspace && workspaces.length === 0)) {
@@ -354,6 +394,12 @@ export function DashboardShell() {
             setSelectedInvoiceId(invoices[0].id);
           } else if (view === "graph" && entities.length > 0 && !selectedEntityId) {
             setSelectedEntityId(entities[0].id);
+          } else if (view === "inbox" && alerts.length > 0 && !selectedAlertId) {
+            setSelectedAlertId(alerts[0].id);
+          } else if (view === "finguard" && reviews.length > 0 && !selectedReviewId) {
+            setSelectedReviewId(reviews[0].id);
+          } else if (view === "reports" && dossiers.length > 0 && !selectedDossierId) {
+            setSelectedDossierId(dossiers[0].id);
           }
         }}
         isCollapsed={isLeftCollapsed}
@@ -371,6 +417,9 @@ export function DashboardShell() {
         evidenceList={evidenceList}
         entities={entities}
         invoices={invoices}
+        alerts={alerts}
+        reviews={reviews}
+        dossiers={dossiers}
         selectedInvestigationId={selectedInvestigationId}
         onSelectInvestigation={(id) => {
           setSelectedInvestigationId(id);
@@ -396,14 +445,54 @@ export function DashboardShell() {
           setSelectedEntityId(id);
           setIsEditingProfile(false);
         }}
+        selectedAlertId={selectedAlertId}
+        onSelectAlert={(id) => {
+          setSelectedAlertId(id);
+          setIsEditingProfile(false);
+        }}
+        selectedReviewId={selectedReviewId}
+        onSelectReview={(id) => {
+          setSelectedReviewId(id);
+          setIsEditingProfile(false);
+        }}
+        selectedDossierId={selectedDossierId}
+        onSelectDossier={(id) => {
+          setSelectedDossierId(id);
+          setIsEditingProfile(false);
+        }}
         isCollapsed={isMiddleCollapsed}
         onToggleCollapse={() => setIsMiddleCollapsed(true)}
         onOpenQuickCreate={handleOpenQuickCreate}
       />
 
-      {/* 3. Right Pane — Main Intelligence Workspace Switch */}
+      {/* 3. Right Pane — Dedicated Intelligence Workspace Engine */}
       {isEditingProfile ? (
         <ProfileSettingsPane onClose={() => setIsEditingProfile(false)} />
+      ) : activeView === "inbox" ? (
+        <InboxWorkspace
+          alert={currentAlert}
+          workspaceId={activeWsId}
+          onConvertToInvestigation={handleAlertToInvestigation}
+          onAlertUpdated={(updated) => {
+            setAlerts((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+          }}
+        />
+      ) : activeView === "finguard" ? (
+        <ReviewWorkspace
+          review={currentReview}
+          workspaceId={activeWsId}
+          onReviewUpdated={(updated) => {
+            setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+          }}
+        />
+      ) : activeView === "reports" ? (
+        <DossierWorkspace
+          dossier={currentDossier}
+          workspaceId={activeWsId}
+          onDossierUpdated={(updated) => {
+            setDossiers((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+          }}
+        />
       ) : activeView === "suppliers" ? (
         <SupplierWorkspace
           supplier={currentSupplier}
@@ -440,6 +529,7 @@ export function DashboardShell() {
           onSelectView={(v) => setActiveView(v)}
         />
       ) : (
+        /* Default: "investigations" (My issues) and "graph" */
         <MainWorkspace
           investigation={currentInvestigation}
           workspaceName={activeWorkspace?.name || "Sentinel"}
@@ -466,7 +556,7 @@ export function DashboardShell() {
         onSelectItem={(type, id) => {
           if (type === "investigation") {
             setSelectedInvestigationId(id);
-            setActiveView("inbox");
+            setActiveView("investigations");
           } else if (type === "supplier") {
             setSelectedSupplierId(id);
             setActiveView("suppliers");

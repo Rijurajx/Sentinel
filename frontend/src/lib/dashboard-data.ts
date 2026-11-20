@@ -133,6 +133,64 @@ export interface EntityItem {
   lastObserved: string;
 }
 
+export interface InboxAlertItem {
+  id: string;
+  title: string;
+  source: "FinGuard Gateway" | "ScamShield Ingestion" | "TrustGraph Radar" | "Treasury Webhook";
+  severity: "Critical" | "High" | "Medium" | "Info";
+  status: "Action Required" | "Investigating" | "Dismissed";
+  timestamp: string;
+  summary: string;
+  affectedEntity: string;
+  amount?: string;
+  payloadSnippet: string;
+  recommendedAction: string;
+}
+
+export interface ReviewItem {
+  id: string;
+  title: string;
+  type: "Payment Hold Override" | "Vendor Coordinate Change" | "IFSC Checksum Exception";
+  requesterName: string;
+  requesterRole: string;
+  requestedDate: string;
+  status: "Pending Dual-Auth" | "Approved" | "Rejected";
+  riskTier: "Critical" | "High" | "Medium";
+  amount: string;
+  targetSupplier: string;
+  discrepancySummary: string;
+  currentCoordinates: {
+    accountNumber: string;
+    ifsc: string;
+    bankName: string;
+  };
+  proposedCoordinates: {
+    accountNumber: string;
+    ifsc: string;
+    bankName: string;
+  };
+  checks: Array<{
+    name: string;
+    passed: boolean;
+    detail: string;
+  }>;
+}
+
+export interface DossierItem {
+  id: string;
+  title: string;
+  classification: "RESTRICTED // TREASURY FRAUD INTEL" | "CONFIDENTIAL // COMPLIANCE";
+  generatedDate: string;
+  associatedIncidentId: string;
+  targetSyndicate: string;
+  preventedLoss: string;
+  threatScore: number;
+  executiveSummary: string;
+  provenanceEntitiesCount: number;
+  status: "Active Brief" | "Submitted to Regulators" | "Archived";
+  actionableRecommendations: string[];
+}
+
 export const INITIAL_INVESTIGATIONS: InvestigationItem[] = [
   {
     id: "AST-104",
@@ -697,3 +755,196 @@ export const INITIAL_ENTITIES: EntityItem[] = [
     lastObserved: "2m ago",
   },
 ];
+
+export const INITIAL_INBOX_ALERTS: InboxAlertItem[] = [
+  {
+    id: "ALRT-901",
+    title: "Urgent Wire Transfer $485,000 Intercepted at Gateway",
+    source: "FinGuard Gateway",
+    severity: "Critical",
+    status: "Action Required",
+    timestamp: "2m ago",
+    summary:
+      "Automated treasury wire gate blocked ACH release for Apex Logistics. Beneficiary clearing code FAKEX009999 was rejected by the RBI IFSC registry.",
+    affectedEntity: "Apex Logistics International",
+    amount: "$485,000.00",
+    payloadSnippet:
+      '{"tx_ref": "TX-889102", "source_acc": "CORP-TREAS-01", "dest_acc": "998877665544", "ifsc": "FAKEX009999", "gate_action": "HOLD"}',
+    recommendedAction: "Convert to formal investigation and freeze downstream transaction settlement.",
+  },
+  {
+    id: "ALRT-902",
+    title: "ScamShield Flagged Ingested PDF with Fake Port Detention Threat",
+    source: "ScamShield Ingestion",
+    severity: "High",
+    status: "Action Required",
+    timestamp: "14m ago",
+    summary:
+      "Multimodal analysis detected extreme psychological coercion language ('Port seizure penalty within 4 hours') on document INV-8891.",
+    affectedEntity: "Urgent_Apex_Logistics_Invoice_INV-8891.pdf",
+    amount: "$485,000.00",
+    payloadSnippet:
+      '{"ocr_model": "gemini-2.5-flash", "coercion_score": 0.94, "category": "BEC", "triggers": ["Port Detention", "Wire Immediate"]}',
+    recommendedAction: "Validate purchase order matching via out-of-band logistics verification.",
+  },
+  {
+    id: "ALRT-903",
+    title: "Suspicious Domain Registered Spoofing Vendor MX Records",
+    source: "TrustGraph Radar",
+    severity: "High",
+    status: "Investigating",
+    timestamp: "1h ago",
+    summary:
+      "TrustGraph discovered newly registered domain asterion-supplies-billing.com (created 4 days ago) routing mail through known malicious relays.",
+    affectedEntity: "asterion-supplies-billing.com",
+    payloadSnippet:
+      '{"domain": "asterion-supplies-billing.com", "whois_age_days": 4, "reputation": "MALICIOUS", "linked_incidents": ["AST-104"]}',
+    recommendedAction: "Deploy DNS-level perimeter blocklist rule across corporate mail relays.",
+  },
+];
+
+export const INITIAL_REVIEWS: ReviewItem[] = [
+  {
+    id: "REV-401",
+    title: "Emergency Dual-Auth Signoff: Apex Logistics Wire Transfer ($485,000)",
+    type: "Payment Hold Override",
+    requesterName: "Sarah Chen",
+    requesterRole: "Accounts Payable Controller",
+    requestedDate: "Nov 19, 2026, 14:30 UTC",
+    status: "Pending Dual-Auth",
+    riskTier: "Critical",
+    amount: "$485,000.00",
+    targetSupplier: "Apex Logistics International",
+    discrepancySummary:
+      "Invoice payee coordinates diverged from Master Vendor File. Payee presented: 998877665544 (IFSC: FAKEX009999). Registered: 111122223333 (IFSC: HDFC0001234).",
+    currentCoordinates: {
+      accountNumber: "1111 2222 3333",
+      ifsc: "HDFC0001234",
+      bankName: "HDFC Bank, Bandra West, Mumbai",
+    },
+    proposedCoordinates: {
+      accountNumber: "9988 7766 5544",
+      ifsc: "FAKEX009999",
+      bankName: "Unrecognized Financial Institution (Mule Flag)",
+    },
+    checks: [
+      { name: "RBI Scheduled Bank Checksum", passed: false, detail: "FAKEX009999 failed RBI master IFSC registry checksum" },
+      { name: "Master Vendor Account Match", passed: false, detail: "Payee 998877665544 does not match established profile" },
+      { name: "Vendor Dual-Confirmation Callback", passed: false, detail: "No out-of-band call recorded with David Vance" },
+      { name: "Executive Persona Match", passed: false, detail: "Originating email used unverified lookalike domain" },
+    ],
+  },
+  {
+    id: "REV-402",
+    title: "Vendor Profile Banking Change: Asterion Supplies Pvt Ltd",
+    type: "Vendor Coordinate Change",
+    requesterName: "David Miller",
+    requesterRole: "Senior Procurement Specialist",
+    requestedDate: "Nov 19, 2026, 11:15 UTC",
+    status: "Pending Dual-Auth",
+    riskTier: "Critical",
+    amount: "$485,000.00",
+    targetSupplier: "Asterion Supplies Pvt Ltd",
+    discrepancySummary:
+      "Requested bank account update to Axis Bank Connaught Place (999988887777). Discrepancy detected with long-standing HDFC account.",
+    currentCoordinates: {
+      accountNumber: "1111 2222 3333",
+      ifsc: "DEMO0001111",
+      bankName: "HDFC Bank, Bandra West",
+    },
+    proposedCoordinates: {
+      accountNumber: "9999 8888 7777",
+      ifsc: "DEMO0002222",
+      bankName: "Axis Bank, Connaught Place",
+    },
+    checks: [
+      { name: "Format & Cheque Leaf Verification", passed: false, detail: "Cancelled cheque leaf failed forensic font inspection" },
+      { name: "Historical Invoicing Variance", passed: false, detail: "Requested immediate payment redirect on active PO" },
+    ],
+  },
+  {
+    id: "REV-403",
+    title: "Quarterly IT Infrastructure Recurring Clearance: CloudCore Inc",
+    type: "Payment Hold Override",
+    requesterName: "Emily Watson",
+    requesterRole: "Finance Operations",
+    requestedDate: "Nov 19, 2026, 09:10 UTC",
+    status: "Approved",
+    riskTier: "Medium",
+    amount: "$124,300.00",
+    targetSupplier: "CloudCore Infrastructure Inc",
+    discrepancySummary: "Standard periodic settlement check. Zero coordinate discrepancies detected.",
+    currentCoordinates: {
+      accountNumber: "4444 5555 6666",
+      ifsc: "SVB0000444",
+      bankName: "Silicon Valley Bank, Sand Hill Road",
+    },
+    proposedCoordinates: {
+      accountNumber: "4444 5555 6666",
+      ifsc: "SVB0000444",
+      bankName: "Silicon Valley Bank, Sand Hill Road",
+    },
+    checks: [
+      { name: "RBI / Clearing House Match", passed: true, detail: "100% verified against SVB routing registry" },
+      { name: "Master Vendor Account Match", passed: true, detail: "Exact match with registered contract records" },
+    ],
+  },
+];
+
+export const INITIAL_DOSSIERS: DossierItem[] = [
+  {
+    id: "DOS-2026-01",
+    title: "Executive Impersonation & Freight Diversion Syndicate (Apex Logistics Case)",
+    classification: "RESTRICTED // TREASURY FRAUD INTEL",
+    generatedDate: "Nov 20, 2026",
+    associatedIncidentId: "INC-719",
+    targetSyndicate: "Apex Logistics Spoofing Cluster",
+    preventedLoss: "$485,000.00",
+    threatScore: 96,
+    executiveSummary:
+      "A sophisticated Business Email Compromise (BEC) attempt orchestrated against the corporate treasury department. Perpetrators created a lookalike domain (apex-logistics-urgent.com), spoofed CEO David Vance, and submitted altered invoice INV-8891 demanding an emergency wire of $485,000 to an invalid clearing code FAKEX009999. FinGuard intercepted the transaction within 0.2ms.",
+    provenanceEntitiesCount: 5,
+    status: "Active Brief",
+    actionableRecommendations: [
+      "Maintain active freeze on payee account 998877665544 across banking gateways.",
+      "Submit forensic packet to RBI FinNet / CERT-In financial cybercrime portal.",
+      "Mandate voice out-of-band verification on all expedited logistics invoices above $100,000.",
+    ],
+  },
+  {
+    id: "DOS-2026-02",
+    title: "Vendor Account Substitution Campaign #104 (Asterion Phishing Infrastructure)",
+    classification: "RESTRICTED // TREASURY FRAUD INTEL",
+    generatedDate: "Nov 19, 2026",
+    associatedIncidentId: "AST-104",
+    targetSyndicate: "Phishing Infrastructure Cluster #104",
+    preventedLoss: "$485,000.00",
+    threatScore: 94,
+    executiveSummary:
+      "Targeted invoice redirection campaign spoofing Asterion Supplies Pvt Ltd. Perpetrators attempted to alter payee coordinates to an Axis Bank mule account (999988887777). TrustGraph cross-incident correlation revealed phone number +91 98765 43210 was previously observed in historical incident #089.",
+    provenanceEntitiesCount: 4,
+    status: "Submitted to Regulators",
+    actionableRecommendations: [
+      "Enforce dual-signoff maker-checker approval for any vendor profile banking modifications.",
+      "Block domain asterion-supplies-billing.com at enterprise edge firewalls.",
+    ],
+  },
+  {
+    id: "DOS-2026-03",
+    title: "Cloud Infrastructure Benign Settlement Audit (CloudCore Q4 Routine)",
+    classification: "CONFIDENTIAL // COMPLIANCE",
+    generatedDate: "Nov 19, 2026",
+    associatedIncidentId: "AST-101",
+    targetSyndicate: "Benign Corporate Settlement",
+    preventedLoss: "$0.00 (Cleared)",
+    threatScore: 12,
+    executiveSummary:
+      "Routine automated clearance for CloudCore Infrastructure Inc. Both FinGuard deterministic validation and ScamShield OCR passed with zero discrepancies. Invoice cleared for scheduled disbursement.",
+    provenanceEntitiesCount: 2,
+    status: "Archived",
+    actionableRecommendations: [
+      "Release funds under standard net-30 vendor agreement terms.",
+    ],
+  },
+];
+

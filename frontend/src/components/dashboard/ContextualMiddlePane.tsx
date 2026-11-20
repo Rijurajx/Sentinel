@@ -7,6 +7,9 @@ import {
   EvidenceItem,
   EntityItem,
   InvoiceItem,
+  InboxAlertItem,
+  ReviewItem,
+  DossierItem,
 } from "@/lib/dashboard-data";
 import {
   Search,
@@ -23,6 +26,10 @@ import {
   CreditCard,
   Radio,
   Scan,
+  Bell,
+  Lock,
+  FileCheck2,
+  ShieldAlert,
 } from "lucide-react";
 
 interface ContextualMiddlePaneProps {
@@ -32,6 +39,9 @@ interface ContextualMiddlePaneProps {
   evidenceList: EvidenceItem[];
   entities: EntityItem[];
   invoices?: InvoiceItem[];
+  alerts?: InboxAlertItem[];
+  reviews?: ReviewItem[];
+  dossiers?: DossierItem[];
   selectedInvestigationId: string;
   onSelectInvestigation: (id: string) => void;
   selectedSupplierId?: string;
@@ -42,6 +52,12 @@ interface ContextualMiddlePaneProps {
   onSelectInvoice?: (id: string) => void;
   selectedEntityId?: string;
   onSelectEntity?: (id: string) => void;
+  selectedAlertId?: string;
+  onSelectAlert?: (id: string) => void;
+  selectedReviewId?: string;
+  onSelectReview?: (id: string) => void;
+  selectedDossierId?: string;
+  onSelectDossier?: (id: string) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   onOpenQuickCreate?: (tab?: "investigation" | "supplier" | "upload" | "entity") => void;
@@ -54,6 +70,9 @@ export function ContextualMiddlePane({
   evidenceList,
   entities,
   invoices = [],
+  alerts = [],
+  reviews = [],
+  dossiers = [],
   selectedInvestigationId,
   onSelectInvestigation,
   selectedSupplierId,
@@ -64,6 +83,12 @@ export function ContextualMiddlePane({
   onSelectInvoice,
   selectedEntityId,
   onSelectEntity,
+  selectedAlertId,
+  onSelectAlert,
+  selectedReviewId,
+  onSelectReview,
+  selectedDossierId,
+  onSelectDossier,
   isCollapsed,
   onToggleCollapse,
   onOpenQuickCreate,
@@ -79,7 +104,7 @@ export function ContextualMiddlePane({
   const getTitle = () => {
     switch (activeView) {
       case "inbox":
-        return "Inbox";
+        return "Alert Feed (Inbox)";
       case "investigations":
         return "My issues";
       case "command":
@@ -97,13 +122,13 @@ export function ContextualMiddlePane({
       case "reports":
         return "Intelligence Dossiers";
       case "finguard":
-        return "Reviews";
+        return "Reviews (Dual-Auth)";
       default:
         return "Inbox";
     }
   };
 
-  // Filter investigations cleanly
+  // Filter investigations cleanly (My issues)
   const filteredInvestigations = investigations.filter((item) => {
     const matchesSearch =
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -113,6 +138,44 @@ export function ContextualMiddlePane({
     if (!matchesSearch) return false;
     if (filterTab === "unreviewed") return item.status === "Under Review" || item.status === "Blocked";
     if (filterTab === "snoozed") return item.status === "Monitoring";
+    return true;
+  });
+
+  // Filter alerts (Inbox)
+  const filteredAlerts = alerts.filter((alrt) => {
+    const matchesSearch =
+      alrt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      alrt.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      alrt.affectedEntity.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (!matchesSearch) return false;
+    if (filterTab === "unreviewed") return alrt.status === "Action Required";
+    if (filterTab === "snoozed") return alrt.status === "Dismissed";
+    return true;
+  });
+
+  // Filter reviews (Dual-auth queue)
+  const filteredReviews = reviews.filter((rev) => {
+    const matchesSearch =
+      rev.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      rev.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      rev.targetSupplier.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (!matchesSearch) return false;
+    if (filterTab === "unreviewed") return rev.status === "Pending Dual-Auth";
+    if (filterTab === "snoozed") return rev.status === "Approved";
+    return true;
+  });
+
+  // Filter dossiers
+  const filteredDossiers = dossiers.filter((dos) => {
+    const matchesSearch =
+      dos.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      dos.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      dos.targetSyndicate.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (!matchesSearch) return false;
+    if (filterTab === "unreviewed") return dos.status === "Active Brief";
     return true;
   });
 
@@ -144,6 +207,9 @@ export function ContextualMiddlePane({
   );
 
   const getCount = () => {
+    if (activeView === "inbox") return filteredAlerts.length;
+    if (activeView === "finguard") return filteredReviews.length;
+    if (activeView === "reports") return filteredDossiers.length;
     if (activeView === "suppliers") return filteredSuppliers.length;
     if (activeView === "evidence" || activeView === "scamshield") return filteredEvidence.length;
     if (activeView === "invoices") return filteredInvoices.length;
@@ -255,11 +321,65 @@ export function ContextualMiddlePane({
 
       {/* Dynamic List Content */}
       <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
-        {/* 1. Investigations / Inbox Views */}
-        {(activeView === "inbox" ||
-          activeView === "investigations" ||
-          activeView === "finguard" ||
-          activeView === "reports") &&
+        {/* 1. Inbox Alerts View */}
+        {activeView === "inbox" && (
+          <>
+            {filteredAlerts.map((alrt) => {
+              const isSelected = selectedAlertId === alrt.id;
+              const isCritical = alrt.severity === "Critical" || alrt.severity === "High";
+              return (
+                <div
+                  key={alrt.id}
+                  onClick={() => onSelectAlert?.(alrt.id)}
+                  className={`p-2.5 rounded-lg flex items-start gap-3 cursor-pointer transition-colors ${
+                    isSelected
+                      ? "bg-white/[0.08] text-white shadow-sm ring-1 ring-white/10"
+                      : "hover:bg-white/[0.03] text-[#8a8f98]"
+                  }`}
+                >
+                  <div className="relative mt-0.5 shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-[10px] font-medium text-[#8a8f98]">
+                      <Bell className="w-3 h-3 text-[#5e6ad2]" />
+                    </div>
+                    {isCritical && (
+                      <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#eb5757] ring-2 ring-[#08090a]" />
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1">
+                      <span
+                        className={`text-xs font-medium truncate ${
+                          isSelected ? "text-[#f7f8f8]" : "text-[#d0d3d8]"
+                        }`}
+                      >
+                        {alrt.id} {alrt.title}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 mt-0.5 text-[11px] text-[#8a8f98]">
+                      <span className="truncate">
+                        {alrt.source} • {alrt.affectedEntity}
+                      </span>
+                      <span className="font-mono text-[10px] text-[#62666d] shrink-0">
+                        {alrt.timestamp}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {filteredAlerts.length === 0 && (
+              <div className="py-16 px-4 text-center space-y-1.5 text-xs text-[#8a8f98]">
+                <div className="font-medium text-[#f7f8f8]">Inbox Zero — All Clear</div>
+                <div className="text-[11px] text-[#62666d]">No incoming perimeter alerts pending triage.</div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* 2. My Issues (Investigations) View */}
+        {activeView === "investigations" &&
           filteredInvestigations.map((item) => {
             const isSelected = selectedInvestigationId === item.id;
             return (
@@ -318,7 +438,111 @@ export function ContextualMiddlePane({
             );
           })}
 
-        {/* 2. Suppliers View */}
+        {/* 3. Reviews (Dual-Auth Queue) View */}
+        {activeView === "finguard" && (
+          <>
+            {filteredReviews.map((rev) => {
+              const isSelected = selectedReviewId === rev.id;
+              const isApproved = rev.status === "Approved";
+              const isRejected = rev.status === "Rejected";
+              return (
+                <div
+                  key={rev.id}
+                  onClick={() => onSelectReview?.(rev.id)}
+                  className={`p-2.5 rounded-lg flex items-center justify-between cursor-pointer transition-colors ${
+                    isSelected
+                      ? "bg-white/[0.08] text-white shadow-sm ring-1 ring-white/10"
+                      : "hover:bg-white/[0.03] text-[#8a8f98]"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Lock
+                      className={`w-4 h-4 shrink-0 ${
+                        isApproved ? "text-[#4ebe82]" : isRejected ? "text-[#eb5757]" : "text-[#f0b96d]"
+                      }`}
+                    />
+                    <div className="truncate">
+                      <div
+                        className={`text-xs font-medium truncate ${
+                          isSelected ? "text-white" : "text-[#f7f8f8]"
+                        }`}
+                      >
+                        {rev.id} • {rev.targetSupplier}
+                      </div>
+                      <div className="text-[10px] text-[#8a8f98] font-mono truncate">
+                        {rev.amount} • {rev.requesterName}
+                      </div>
+                    </div>
+                  </div>
+                  <span
+                    className={`text-[10px] font-mono px-1.5 py-0.2 rounded shrink-0 ${
+                      isApproved
+                        ? "bg-[#4ebe82]/10 text-[#4ebe82] border border-[#4ebe82]/20"
+                        : isRejected
+                        ? "bg-[#eb5757]/10 text-[#eb5757] border border-[#eb5757]/20"
+                        : "bg-[#f0b96d]/10 text-[#f0b96d] border border-[#f0b96d]/20"
+                    }`}
+                  >
+                    {rev.status === "Pending Dual-Auth" ? "Sign-off" : rev.status}
+                  </span>
+                </div>
+              );
+            })}
+            {filteredReviews.length === 0 && (
+              <div className="py-16 px-4 text-center space-y-1.5 text-xs text-[#8a8f98]">
+                <div className="font-medium text-[#f7f8f8]">Queue Clear</div>
+                <div className="text-[11px] text-[#62666d]">No payment release holds pending dual authorization.</div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* 4. Intelligence Dossiers View */}
+        {activeView === "reports" && (
+          <>
+            {filteredDossiers.map((dos) => {
+              const isSelected = selectedDossierId === dos.id;
+              return (
+                <div
+                  key={dos.id}
+                  onClick={() => onSelectDossier?.(dos.id)}
+                  className={`p-2.5 rounded-lg flex items-center justify-between cursor-pointer transition-colors ${
+                    isSelected
+                      ? "bg-white/[0.08] text-white shadow-sm ring-1 ring-white/10"
+                      : "hover:bg-white/[0.03] text-[#8a8f98]"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <FileText className="w-4 h-4 text-[#5e6ad2] shrink-0" />
+                    <div className="truncate">
+                      <div
+                        className={`text-xs font-medium truncate ${
+                          isSelected ? "text-white" : "text-[#f7f8f8]"
+                        }`}
+                      >
+                        {dos.id} • {dos.targetSyndicate}
+                      </div>
+                      <div className="text-[10px] text-[#8a8f98] font-mono truncate">
+                        Score: {dos.threatScore}/100 • Loss Prevented: {dos.preventedLoss}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white/[0.04] text-[#8a8f98] shrink-0">
+                    {dos.status}
+                  </span>
+                </div>
+              );
+            })}
+            {filteredDossiers.length === 0 && (
+              <div className="py-16 px-4 text-center space-y-1.5 text-xs text-[#8a8f98]">
+                <div className="font-medium text-[#f7f8f8]">No Dossiers Filed</div>
+                <div className="text-[11px] text-[#62666d]">Executive threat briefs compile automatically from resolved dockets.</div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* 5. Suppliers View */}
         {activeView === "suppliers" && (
           <>
             {filteredSuppliers.map((sup) => {
@@ -400,7 +624,7 @@ export function ContextualMiddlePane({
           </>
         )}
 
-        {/* 3. Evidence Vault / ScamShield Ingestion */}
+        {/* 6. Evidence Vault / ScamShield Ingestion */}
         {(activeView === "evidence" || activeView === "scamshield") && (
           <>
             {filteredEvidence.map((ev) => {
@@ -482,7 +706,7 @@ export function ContextualMiddlePane({
           </>
         )}
 
-        {/* 4. Invoices View */}
+        {/* 7. Invoices View */}
         {activeView === "invoices" && (
           <>
             {filteredInvoices.map((inv) => {
@@ -564,7 +788,7 @@ export function ContextualMiddlePane({
           </>
         )}
 
-        {/* 5. TrustGraph Entities View */}
+        {/* 8. TrustGraph Entities View */}
         {activeView === "graph" && (
           <>
             {filteredEntities.map((ent) => {
@@ -635,7 +859,7 @@ export function ContextualMiddlePane({
           </>
         )}
 
-        {/* 6. Pulse Telemetry Channels */}
+        {/* 9. Pulse Telemetry Channels */}
         {activeView === "command" && (
           <div className="space-y-1 p-1">
             <div className="p-2.5 rounded-lg bg-white/[0.08] text-white flex items-center justify-between cursor-pointer">

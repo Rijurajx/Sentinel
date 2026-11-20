@@ -16,11 +16,17 @@ import {
   EvidenceItem,
   EntityItem,
   InvoiceItem,
+  InboxAlertItem,
+  ReviewItem,
+  DossierItem,
   INITIAL_INVOICES,
   INITIAL_EVIDENCE,
   INITIAL_SUPPLIERS,
   INITIAL_INVESTIGATIONS,
   INITIAL_ENTITIES,
+  INITIAL_INBOX_ALERTS,
+  INITIAL_REVIEWS,
+  INITIAL_DOSSIERS,
 } from "./dashboard-data";
 
 // Helper to get or set local fallback cache
@@ -334,5 +340,201 @@ export function subscribeInvoices(
   onUpdate(cached);
   return () => {};
 }
+
+/* =========================================================================
+   6. INBOX ALERTS SERVICE
+========================================================================= */
+
+export async function addInboxAlertDoc(
+  workspaceId: string,
+  alert: InboxAlertItem
+): Promise<void> {
+  const localKey = `sentinel_${workspaceId}_inbox_alerts`;
+  const existing = getLocalCache<InboxAlertItem>(localKey, INITIAL_INBOX_ALERTS);
+  setLocalCache(localKey, [alert, ...existing.filter((a) => a.id !== alert.id)]);
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await setDoc(doc(db, "workspaces", workspaceId, "inbox_alerts", alert.id), alert);
+    } catch (e) {
+      console.warn("Firestore write alert error:", e);
+    }
+  }
+}
+
+export async function updateInboxAlertDoc(
+  workspaceId: string,
+  alert: InboxAlertItem
+): Promise<void> {
+  await addInboxAlertDoc(workspaceId, alert);
+}
+
+export function subscribeInboxAlerts(
+  workspaceId: string,
+  onUpdate: (items: InboxAlertItem[]) => void
+): Unsubscribe | (() => void) {
+  const localKey = `sentinel_${workspaceId}_inbox_alerts`;
+
+  if (isFirebaseConfigured && db) {
+    try {
+      const q = collection(db, "workspaces", workspaceId, "inbox_alerts");
+      return onSnapshot(
+        q,
+        (snapshot) => {
+          const items: InboxAlertItem[] = [];
+          snapshot.forEach((d) => items.push(d.data() as InboxAlertItem));
+          if (items.length === 0) {
+            INITIAL_INBOX_ALERTS.forEach((a) => addInboxAlertDoc(workspaceId, a));
+            onUpdate(INITIAL_INBOX_ALERTS);
+          } else {
+            setLocalCache(localKey, items);
+            onUpdate(items);
+          }
+        },
+        (error) => {
+          console.warn("Firestore alerts snapshot error:", error);
+          onUpdate(getLocalCache<InboxAlertItem>(localKey, INITIAL_INBOX_ALERTS));
+        }
+      );
+    } catch (e) {
+      console.warn("Firestore subscribe exception:", e);
+    }
+  }
+
+  const cached = getLocalCache<InboxAlertItem>(localKey, INITIAL_INBOX_ALERTS);
+  onUpdate(cached);
+  return () => {};
+}
+
+/* =========================================================================
+   7. REVIEWS (DUAL-AUTH QUEUE) SERVICE
+========================================================================= */
+
+export async function addReviewDoc(
+  workspaceId: string,
+  review: ReviewItem
+): Promise<void> {
+  const localKey = `sentinel_${workspaceId}_reviews`;
+  const existing = getLocalCache<ReviewItem>(localKey, INITIAL_REVIEWS);
+  setLocalCache(localKey, [review, ...existing.filter((r) => r.id !== review.id)]);
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await setDoc(doc(db, "workspaces", workspaceId, "reviews", review.id), review);
+    } catch (e) {
+      console.warn("Firestore write review error:", e);
+    }
+  }
+}
+
+export async function updateReviewDoc(
+  workspaceId: string,
+  review: ReviewItem
+): Promise<void> {
+  await addReviewDoc(workspaceId, review);
+}
+
+export function subscribeReviews(
+  workspaceId: string,
+  onUpdate: (items: ReviewItem[]) => void
+): Unsubscribe | (() => void) {
+  const localKey = `sentinel_${workspaceId}_reviews`;
+
+  if (isFirebaseConfigured && db) {
+    try {
+      const q = collection(db, "workspaces", workspaceId, "reviews");
+      return onSnapshot(
+        q,
+        (snapshot) => {
+          const items: ReviewItem[] = [];
+          snapshot.forEach((d) => items.push(d.data() as ReviewItem));
+          if (items.length === 0) {
+            INITIAL_REVIEWS.forEach((r) => addReviewDoc(workspaceId, r));
+            onUpdate(INITIAL_REVIEWS);
+          } else {
+            setLocalCache(localKey, items);
+            onUpdate(items);
+          }
+        },
+        (error) => {
+          console.warn("Firestore reviews snapshot error:", error);
+          onUpdate(getLocalCache<ReviewItem>(localKey, INITIAL_REVIEWS));
+        }
+      );
+    } catch (e) {
+      console.warn("Firestore subscribe exception:", e);
+    }
+  }
+
+  const cached = getLocalCache<ReviewItem>(localKey, INITIAL_REVIEWS);
+  onUpdate(cached);
+  return () => {};
+}
+
+/* =========================================================================
+   8. INTELLIGENCE DOSSIERS SERVICE
+========================================================================= */
+
+export async function addDossierDoc(
+  workspaceId: string,
+  dossier: DossierItem
+): Promise<void> {
+  const localKey = `sentinel_${workspaceId}_dossiers`;
+  const existing = getLocalCache<DossierItem>(localKey, INITIAL_DOSSIERS);
+  setLocalCache(localKey, [dossier, ...existing.filter((d) => d.id !== dossier.id)]);
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await setDoc(doc(db, "workspaces", workspaceId, "dossiers", dossier.id), dossier);
+    } catch (e) {
+      console.warn("Firestore write dossier error:", e);
+    }
+  }
+}
+
+export async function updateDossierDoc(
+  workspaceId: string,
+  dossier: DossierItem
+): Promise<void> {
+  await addDossierDoc(workspaceId, dossier);
+}
+
+export function subscribeDossiers(
+  workspaceId: string,
+  onUpdate: (items: DossierItem[]) => void
+): Unsubscribe | (() => void) {
+  const localKey = `sentinel_${workspaceId}_dossiers`;
+
+  if (isFirebaseConfigured && db) {
+    try {
+      const q = collection(db, "workspaces", workspaceId, "dossiers");
+      return onSnapshot(
+        q,
+        (snapshot) => {
+          const items: DossierItem[] = [];
+          snapshot.forEach((d) => items.push(d.data() as DossierItem));
+          if (items.length === 0) {
+            INITIAL_DOSSIERS.forEach((d) => addDossierDoc(workspaceId, d));
+            onUpdate(INITIAL_DOSSIERS);
+          } else {
+            setLocalCache(localKey, items);
+            onUpdate(items);
+          }
+        },
+        (error) => {
+          console.warn("Firestore dossiers snapshot error:", error);
+          onUpdate(getLocalCache<DossierItem>(localKey, INITIAL_DOSSIERS));
+        }
+      );
+    } catch (e) {
+      console.warn("Firestore subscribe exception:", e);
+    }
+  }
+
+  const cached = getLocalCache<DossierItem>(localKey, INITIAL_DOSSIERS);
+  onUpdate(cached);
+  return () => {};
+}
+
 
 
