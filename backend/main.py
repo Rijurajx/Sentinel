@@ -71,12 +71,12 @@ async def vercel_path_middleware(request: Request, call_next):
     response = await call_next(request)
     return response
 
-# CORS configuration allowing all origins (Vercel frontend, preview deployments, localhost)
+# CORS configuration allowing all origins (Cloud Run, Vercel frontend, preview deployments, localhost)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"],
+    allow_credentials=False,
+    allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
     max_age=86400,

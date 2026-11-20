@@ -285,7 +285,7 @@ export async function scanGmailInbox(data?: {
       total_scanned: 0,
       fraud_detected_count: 0,
       legitimate_count: 0,
-      prevented_outflow: "/bin/zsh.00",
+      prevented_outflow: "$0.00",
       emails: [],
       connection_error: err?.message || "Failed to reach backend IMAP service.",
     };
