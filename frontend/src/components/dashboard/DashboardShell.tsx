@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { PrimarySidebar } from "./PrimarySidebar";
 import { ContextualMiddlePane } from "./ContextualMiddlePane";
 import { MainWorkspace } from "./MainWorkspace";
+import { SupplierWorkspace } from "./SupplierWorkspace";
+import { EvidenceWorkspace } from "./EvidenceWorkspace";
+import { InvoicesWorkspace } from "./InvoicesWorkspace";
+import { PulseWorkspace } from "./PulseWorkspace";
 import { ProfileSettingsPane } from "./ProfileSettingsPane";
 import { CommandPalette } from "./CommandPalette";
 import { QuickCreateModal } from "./QuickCreateModal";
@@ -14,12 +18,14 @@ import {
   SupplierItem,
   EvidenceItem,
   EntityItem,
+  InvoiceItem,
 } from "@/lib/dashboard-data";
 import {
   subscribeInvestigations,
   subscribeSuppliers,
   subscribeEvidence,
   subscribeEntities,
+  subscribeInvoices,
   addInvestigationDoc,
   addSupplierDoc,
   addEvidenceDoc,
@@ -47,10 +53,17 @@ export function DashboardShell() {
   const [suppliers, setSuppliers] = useState<SupplierItem[]>([]);
   const [evidenceList, setEvidenceList] = useState<EvidenceItem[]>([]);
   const [entities, setEntities] = useState<EntityItem[]>([]);
+  const [invoices, setInvoices] = useState<InvoiceItem[]>([]);
 
   const activeWsId = activeWorkspace?.id || "default-workspace";
 
+  // Selected item IDs for each domain
   const [selectedInvestigationId, setSelectedInvestigationId] = useState<string>("");
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
+  const [selectedEvidenceId, setSelectedEvidenceId] = useState<string>("");
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>("");
+  const [selectedEntityId, setSelectedEntityId] = useState<string>("");
+
   const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
   const [isMiddleCollapsed, setIsMiddleCollapsed] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -68,7 +81,7 @@ export function DashboardShell() {
       setQuickCreateTab(tab);
     } else if (activeView === "suppliers") {
       setQuickCreateTab("supplier");
-    } else if (activeView === "evidence" || activeView === "scamshield") {
+    } else if (activeView === "evidence" || activeView === "scamshield" || activeView === "invoices") {
       setQuickCreateTab("upload");
     } else if (activeView === "graph") {
       setQuickCreateTab("entity");
@@ -121,14 +134,50 @@ export function DashboardShell() {
 
     const unsubSup = subscribeSuppliers(activeWsId, (items) => {
       setSuppliers(items);
+      if (items.length > 0) {
+        setSelectedSupplierId((prev) => {
+          if (!prev || !items.some((s) => s.id === prev)) {
+            return items[0].id;
+          }
+          return prev;
+        });
+      }
     });
 
     const unsubEv = subscribeEvidence(activeWsId, (items) => {
       setEvidenceList(items);
+      if (items.length > 0) {
+        setSelectedEvidenceId((prev) => {
+          if (!prev || !items.some((e) => e.id === prev)) {
+            return items[0].id;
+          }
+          return prev;
+        });
+      }
     });
 
     const unsubEnt = subscribeEntities(activeWsId, (items) => {
       setEntities(items);
+      if (items.length > 0) {
+        setSelectedEntityId((prev) => {
+          if (!prev || !items.some((e) => e.id === prev)) {
+            return items[0].id;
+          }
+          return prev;
+        });
+      }
+    });
+
+    const unsubInvoices = subscribeInvoices(activeWsId, (items) => {
+      setInvoices(items);
+      if (items.length > 0) {
+        setSelectedInvoiceId((prev) => {
+          if (!prev || !items.some((inv) => inv.id === prev)) {
+            return items[0].id;
+          }
+          return prev;
+        });
+      }
     });
 
     return () => {
@@ -136,13 +185,26 @@ export function DashboardShell() {
       unsubSup();
       unsubEv();
       unsubEnt();
+      unsubInvoices();
     };
   }, [activeWsId]);
 
-  // Active investigation data
+  // Active current elements
   const currentInvestigation =
     investigations.find((i) => i.id === selectedInvestigationId) ||
     (investigations.length > 0 ? investigations[0] : null);
+
+  const currentSupplier =
+    suppliers.find((s) => s.id === selectedSupplierId) ||
+    (suppliers.length > 0 ? suppliers[0] : null);
+
+  const currentEvidence =
+    evidenceList.find((e) => e.id === selectedEvidenceId) ||
+    (evidenceList.length > 0 ? evidenceList[0] : null);
+
+  const currentInvoice =
+    invoices.find((inv) => inv.id === selectedInvoiceId) ||
+    (invoices.length > 0 ? invoices[0] : null);
 
   // Add Comment handler
   const handleAddComment = async (commentText: string) => {
@@ -252,14 +314,17 @@ export function DashboardShell() {
 
   const handleCreateSupplier = async (supplier: SupplierItem) => {
     await addSupplierDoc(activeWsId, supplier);
+    setSelectedSupplierId(supplier.id);
   };
 
   const handleCreateEvidence = async (evidence: EvidenceItem) => {
     await addEvidenceDoc(activeWsId, evidence);
+    setSelectedEvidenceId(evidence.id);
   };
 
   const handleCreateEntity = async (entity: EntityItem) => {
     await addEntityDoc(activeWsId, entity);
+    setSelectedEntityId(entity.id);
   };
 
   if (isLoading || (!activeWorkspace && workspaces.length === 0)) {
@@ -279,6 +344,17 @@ export function DashboardShell() {
           setActiveView(view);
           setIsEditingProfile(false);
           if (isMiddleCollapsed) setIsMiddleCollapsed(false);
+
+          // Auto-focus first item of the selected view if none selected
+          if (view === "suppliers" && suppliers.length > 0 && !selectedSupplierId) {
+            setSelectedSupplierId(suppliers[0].id);
+          } else if ((view === "evidence" || view === "scamshield") && evidenceList.length > 0 && !selectedEvidenceId) {
+            setSelectedEvidenceId(evidenceList[0].id);
+          } else if (view === "invoices" && invoices.length > 0 && !selectedInvoiceId) {
+            setSelectedInvoiceId(invoices[0].id);
+          } else if (view === "graph" && entities.length > 0 && !selectedEntityId) {
+            setSelectedEntityId(entities[0].id);
+          }
         }}
         isCollapsed={isLeftCollapsed}
         onToggleCollapse={() => setIsLeftCollapsed(!isLeftCollapsed)}
@@ -287,16 +363,37 @@ export function DashboardShell() {
         onOpenProfileSettings={() => setIsEditingProfile(true)}
       />
 
-      {/* 2. Middle Pane — Contextual Intelligence List */}
+      {/* 2. Middle Pane — Contextual Intelligence Sub-Bar */}
       <ContextualMiddlePane
         activeView={activeView}
         investigations={investigations}
         suppliers={suppliers}
         evidenceList={evidenceList}
         entities={entities}
+        invoices={invoices}
         selectedInvestigationId={selectedInvestigationId}
         onSelectInvestigation={(id) => {
           setSelectedInvestigationId(id);
+          setIsEditingProfile(false);
+        }}
+        selectedSupplierId={selectedSupplierId}
+        onSelectSupplier={(id) => {
+          setSelectedSupplierId(id);
+          setIsEditingProfile(false);
+        }}
+        selectedEvidenceId={selectedEvidenceId}
+        onSelectEvidence={(id) => {
+          setSelectedEvidenceId(id);
+          setIsEditingProfile(false);
+        }}
+        selectedInvoiceId={selectedInvoiceId}
+        onSelectInvoice={(id) => {
+          setSelectedInvoiceId(id);
+          setIsEditingProfile(false);
+        }}
+        selectedEntityId={selectedEntityId}
+        onSelectEntity={(id) => {
+          setSelectedEntityId(id);
           setIsEditingProfile(false);
         }}
         isCollapsed={isMiddleCollapsed}
@@ -304,9 +401,44 @@ export function DashboardShell() {
         onOpenQuickCreate={handleOpenQuickCreate}
       />
 
-      {/* 3. Right Pane — Main Intelligence Workspace or Profile Settings */}
+      {/* 3. Right Pane — Main Intelligence Workspace Switch */}
       {isEditingProfile ? (
         <ProfileSettingsPane onClose={() => setIsEditingProfile(false)} />
+      ) : activeView === "suppliers" ? (
+        <SupplierWorkspace
+          supplier={currentSupplier}
+          workspaceId={activeWsId}
+          onOpenQuickCreate={handleOpenQuickCreate}
+          onSupplierUpdated={(updated) => {
+            setSuppliers((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+          }}
+        />
+      ) : activeView === "evidence" || activeView === "scamshield" ? (
+        <EvidenceWorkspace
+          evidence={currentEvidence}
+          workspaceId={activeWsId}
+          onOpenQuickCreate={handleOpenQuickCreate}
+          onEvidenceUpdated={(updated) => {
+            setEvidenceList((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+          }}
+        />
+      ) : activeView === "invoices" ? (
+        <InvoicesWorkspace
+          invoice={currentInvoice}
+          workspaceId={activeWsId}
+          onOpenQuickCreate={handleOpenQuickCreate}
+          onInvoiceUpdated={(updated) => {
+            setInvoices((prev) => prev.map((inv) => (inv.id === updated.id ? updated : inv)));
+          }}
+        />
+      ) : activeView === "command" ? (
+        <PulseWorkspace
+          investigations={investigations}
+          suppliers={suppliers}
+          evidenceList={evidenceList}
+          invoices={invoices}
+          onSelectView={(v) => setActiveView(v)}
+        />
       ) : (
         <MainWorkspace
           investigation={currentInvestigation}
@@ -320,6 +452,7 @@ export function DashboardShell() {
           suppliers={suppliers}
           evidenceList={evidenceList}
           entities={entities}
+          initialTab={activeView === "graph" ? "graph" : "overview"}
         />
       )}
 
@@ -335,8 +468,10 @@ export function DashboardShell() {
             setSelectedInvestigationId(id);
             setActiveView("inbox");
           } else if (type === "supplier") {
+            setSelectedSupplierId(id);
             setActiveView("suppliers");
           } else if (type === "entity") {
+            setSelectedEntityId(id);
             setActiveView("graph");
           }
         }}

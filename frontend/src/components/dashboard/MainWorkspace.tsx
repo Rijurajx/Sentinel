@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   InvestigationItem,
   SupplierItem,
@@ -48,6 +48,7 @@ interface MainWorkspaceProps {
   suppliers?: SupplierItem[];
   evidenceList?: EvidenceItem[];
   entities?: EntityItem[];
+  initialTab?: "overview" | "graph" | "evidence" | "finguard";
 }
 
 export function MainWorkspace({
@@ -63,10 +64,20 @@ export function MainWorkspace({
   suppliers = [],
   evidenceList = [],
   entities = [],
+  initialTab,
 }: MainWorkspaceProps) {
   const [commentText, setCommentText] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "graph" | "evidence" | "finguard">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "graph" | "evidence" | "finguard">(
+    initialTab || "overview"
+  );
+
+  // Sync activeTab if initialTab changes
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   const [activeGraphNode, setActiveGraphNode] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [liveAnalysis, setLiveAnalysis] = useState<ScamShieldResult | null>(null);

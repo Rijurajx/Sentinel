@@ -15,6 +15,12 @@ import {
   SupplierItem,
   EvidenceItem,
   EntityItem,
+  InvoiceItem,
+  INITIAL_INVOICES,
+  INITIAL_EVIDENCE,
+  INITIAL_SUPPLIERS,
+  INITIAL_INVESTIGATIONS,
+  INITIAL_ENTITIES,
 } from "./dashboard-data";
 
 // Helper to get or set local fallback cache
@@ -249,4 +255,84 @@ export function subscribeEntities(
   onUpdate(cached);
   return () => {};
 }
+
+export async function updateSupplierDoc(
+  workspaceId: string,
+  supplier: SupplierItem
+): Promise<void> {
+  await addSupplierDoc(workspaceId, supplier);
+}
+
+export async function updateEvidenceDoc(
+  workspaceId: string,
+  evidence: EvidenceItem
+): Promise<void> {
+  await addEvidenceDoc(workspaceId, evidence);
+}
+
+/* =========================================================================
+   5. INVOICES SERVICE
+========================================================================= */
+
+export async function addInvoiceDoc(
+  workspaceId: string,
+  invoice: InvoiceItem
+): Promise<void> {
+  const localKey = `sentinel_${workspaceId}_invoices`;
+  const existing = getLocalCache<InvoiceItem>(localKey, INITIAL_INVOICES);
+  setLocalCache(localKey, [invoice, ...existing.filter((i) => i.id !== invoice.id)]);
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await setDoc(doc(db, "workspaces", workspaceId, "invoices", invoice.id), invoice);
+    } catch (e) {
+      console.warn("Firestore write invoice error:", e);
+    }
+  }
+}
+
+export async function updateInvoiceDoc(
+  workspaceId: string,
+  invoice: InvoiceItem
+): Promise<void> {
+  await addInvoiceDoc(workspaceId, invoice);
+}
+
+export function subscribeInvoices(
+  workspaceId: string,
+  onUpdate: (items: InvoiceItem[]) => void
+): Unsubscribe | (() => void) {
+  const localKey = `sentinel_${workspaceId}_invoices`;
+
+  if (isFirebaseConfigured && db) {
+    try {
+      const q = collection(db, "workspaces", workspaceId, "invoices");
+      return onSnapshot(
+        q,
+        (snapshot) => {
+          const items: InvoiceItem[] = [];
+          snapshot.forEach((d) => items.push(d.data() as InvoiceItem));
+          if (items.length === 0) {
+            INITIAL_INVOICES.forEach((inv) => addInvoiceDoc(workspaceId, inv));
+            onUpdate(INITIAL_INVOICES);
+          } else {
+            setLocalCache(localKey, items);
+            onUpdate(items);
+          }
+        },
+        (error) => {
+          console.warn("Firestore invoices snapshot error:", error);
+          onUpdate(getLocalCache<InvoiceItem>(localKey, INITIAL_INVOICES));
+        }
+      );
+    } catch (e) {
+      console.warn("Firestore subscribe exception:", e);
+    }
+  }
+
+  const cached = getLocalCache<InvoiceItem>(localKey, INITIAL_INVOICES);
+  onUpdate(cached);
+  return () => {};
+}
+
 

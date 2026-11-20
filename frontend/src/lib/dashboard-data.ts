@@ -91,6 +91,37 @@ export interface EvidenceItem {
   threatSummary?: string;
   threatCategory?: string;
   severity?: string;
+  urgencyTriggers?: string[];
+  coercionTactics?: string[];
+  extractedEntities?: Array<{
+    type: string;
+    value: string;
+    role: string;
+  }>;
+}
+
+export interface InvoiceItem {
+  id: string;
+  vendorName: string;
+  amount: string;
+  invoiceDate: string;
+  dueDate: string;
+  status: "Payment Held" | "Cleared" | "Under Review" | "Discrepancy";
+  payeeAccount: string;
+  payeeIfsc: string;
+  expectedAccount?: string;
+  expectedIfsc?: string;
+  bankBranch?: string;
+  matchStatus: "MISMATCH" | "VERIFIED" | "UNKNOWN";
+  discrepancyNote?: string;
+  poNumber: string;
+  items: Array<{
+    description: string;
+    quantity: number;
+    unitPrice: string;
+    total: string;
+  }>;
+  associatedInvestigationId?: string;
 }
 
 export interface EntityItem {
@@ -445,39 +476,182 @@ export const INITIAL_SUPPLIERS: SupplierItem[] = [
 export const INITIAL_EVIDENCE: EvidenceItem[] = [
   {
     id: "EV-01",
-    title: "INV-2024-8842_Asterion_Fraudulent.pdf",
+    title: "Urgent_Apex_Logistics_Invoice_INV-8891.pdf",
     type: "Invoice PDF",
-    associatedInvestigationId: "AST-104",
-    uploadedAt: "15 mins ago",
+    associatedInvestigationId: "INC-719",
+    uploadedAt: "Just now",
     status: "Flagged",
     fileSize: "1.4 MB",
+    threatCategory: "Invoice Diversion / Bank Spoofing",
+    severity: "Critical",
+    threatSummary:
+      "Invoice payee coordinates diverged from master supplier profile. Beneficiary account changed to 998877665544 with invalid IFSC FAKEX009999.",
+    urgencyTriggers: [
+      "Immediate Wire Required to Avoid Port Detention Fees",
+      "Demands Settlement within 4 Hours",
+    ],
+    coercionTactics: [
+      "Supply Chain Blockade Threat",
+      "Impersonated Freight Forwarding Authorization",
+    ],
+    extractedEntities: [
+      { type: "Supplier", value: "Apex Logistics International", role: "Alleged Sender" },
+      { type: "Payee Account", value: "998877665544", role: "Mule Account" },
+      { type: "IFSC Code", value: "FAKEX009999", role: "Invalid Clearing Code" },
+      { type: "Invoice Total", value: "$485,000.00", role: "Target Wire Volume" },
+    ],
   },
   {
     id: "EV-02",
-    title: "Urgent_Settlement_Demands.eml",
-    type: "Email",
-    associatedInvestigationId: "AST-104",
-    uploadedAt: "12 mins ago",
+    title: "Executive_Impersonation_Wire_Screenshot.png",
+    type: "Screenshot",
+    associatedInvestigationId: "INC-719",
+    uploadedAt: "10 mins ago",
     status: "Flagged",
-    fileSize: "42 KB",
+    fileSize: "820 KB",
+    threatCategory: "Business Email Compromise (BEC)",
+    severity: "Critical",
+    threatSummary:
+      "CEO David Vance persona spoofed requesting an emergency off-ledger wire transfer to an unverified beneficiary to expedite logistics clearance.",
+    urgencyTriggers: [
+      "Confidential Acquisition / Strict Secrecy Demanded",
+      "Bypass Standard Procurement Dual-Signoff",
+    ],
+    coercionTactics: [
+      "Executive Authority Impersonation",
+      "Artificial Time Window Constraint",
+    ],
+    extractedEntities: [
+      { type: "Impersonated Exec", value: "David Vance (CEO)", role: "Persona" },
+      { type: "Routing Code", value: "FAKEX009999", role: "Destination Bank" },
+      { type: "Email", value: "ceo-office@apex-logistics-urgent.com", role: "Lookalike Domain" },
+    ],
   },
   {
     id: "EV-03",
-    title: "Wire_Transfer_Instruction_Slip.png",
-    type: "Screenshot",
+    title: "INV-2024-8842_Asterion_Discrepancy.pdf",
+    type: "Invoice PDF",
     associatedInvestigationId: "AST-104",
-    uploadedAt: "8 mins ago",
-    status: "Extracted",
-    fileSize: "820 KB",
+    uploadedAt: "25 mins ago",
+    status: "Flagged",
+    fileSize: "1.2 MB",
+    threatCategory: "Vendor Account Substitution",
+    severity: "Critical",
+    threatSummary:
+      "Payee account 999988887777 (Axis Connaught) does not match Asterion registered account 111122223333 (HDFC Bandra).",
+    urgencyTriggers: ["Customs Clearance Penalty Imminent"],
+    coercionTactics: ["Time-sensitive release ultimatum"],
+    extractedEntities: [
+      { type: "Supplier", value: "Asterion Supplies Pvt Ltd", role: "Target Vendor" },
+      { type: "Payee Account", value: "999988887777", role: "Diverted Account" },
+      { type: "IFSC Code", value: "DEMO0002222", role: "Axis Connaught" },
+    ],
   },
   {
     id: "EV-04",
-    title: "asterion-supplies-billing.com.whois",
-    type: "Domain Telemetry",
-    associatedInvestigationId: "AST-103",
-    uploadedAt: "1 hour ago",
-    status: "Flagged",
-    fileSize: "14 KB",
+    title: "CloudCore_Routine_Service_Slip.pdf",
+    type: "Invoice PDF",
+    associatedInvestigationId: "AST-101",
+    uploadedAt: "5 hours ago",
+    status: "Verified",
+    fileSize: "620 KB",
+    threatCategory: "Benign Procurement",
+    severity: "Low",
+    threatSummary:
+      "Routine recurring monthly cloud compute invoice. All banking coordinates perfectly match verified profile with Barcode & PO signature match.",
+    urgencyTriggers: [],
+    coercionTactics: [],
+    extractedEntities: [
+      { type: "Supplier", value: "CloudCore Infrastructure Inc", role: "Verified Payee" },
+      { type: "Payee Account", value: "444455556666", role: "Verified Account" },
+      { type: "IFSC / IBAN", value: "SVB0000444", role: "SVB Sand Hill" },
+    ],
+  },
+];
+
+export const INITIAL_INVOICES: InvoiceItem[] = [
+  {
+    id: "INV-8891",
+    vendorName: "Apex Logistics International",
+    amount: "$485,000.00",
+    invoiceDate: "Nov 19, 2026",
+    dueDate: "Immediate (Within 4 Hours)",
+    status: "Payment Held",
+    payeeAccount: "998877665544",
+    payeeIfsc: "FAKEX009999",
+    expectedAccount: "111122223333",
+    expectedIfsc: "HDFC0001234",
+    bankBranch: "Unrecognized Bank Entity (Discrepancy)",
+    matchStatus: "MISMATCH",
+    discrepancyNote:
+      "CRITICAL: Payee account does not match Master Vendor File. Clearing code FAKEX009999 is invalid under RBI / FinGuard registry.",
+    poNumber: "PO-2026-9901",
+    associatedInvestigationId: "INC-719",
+    items: [
+      {
+        description: "Express Air Freight & Expedited Port Clearance - Priority Tier 1",
+        quantity: 1,
+        unitPrice: "$320,000.00",
+        total: "$320,000.00",
+      },
+      {
+        description: "International Customs Bond Escrow & Emergency Clearance Surcharge",
+        quantity: 1,
+        unitPrice: "$165,000.00",
+        total: "$165,000.00",
+      },
+    ],
+  },
+  {
+    id: "INV-2024-8842",
+    vendorName: "Asterion Supplies Pvt Ltd",
+    amount: "$485,000.00",
+    invoiceDate: "Nov 18, 2026",
+    dueDate: "Nov 19, 2026",
+    status: "Discrepancy",
+    payeeAccount: "999988887777",
+    payeeIfsc: "DEMO0002222",
+    expectedAccount: "111122223333",
+    expectedIfsc: "DEMO0001111",
+    bankBranch: "Axis Bank, Connaught Place (Mule Flag)",
+    matchStatus: "MISMATCH",
+    discrepancyNote:
+      "Account substitution detected. Wire requested to unverified payee account at Axis Bank instead of registered HDFC Bandra account.",
+    poNumber: "PO-2024-8840",
+    associatedInvestigationId: "AST-104",
+    items: [
+      {
+        description: "High-Density Enterprise Server Racks & ASIC Modules",
+        quantity: 50,
+        unitPrice: "$9,700.00",
+        total: "$485,000.00",
+      },
+    ],
+  },
+  {
+    id: "INV-1002",
+    vendorName: "CloudCore Infrastructure Inc",
+    amount: "$124,300.00",
+    invoiceDate: "Nov 15, 2026",
+    dueDate: "Dec 01, 2026",
+    status: "Cleared",
+    payeeAccount: "444455556666",
+    payeeIfsc: "SVB0000444",
+    expectedAccount: "444455556666",
+    expectedIfsc: "SVB0000444",
+    bankBranch: "Silicon Valley Bank, Sand Hill Road",
+    matchStatus: "VERIFIED",
+    discrepancyNote: "All credentials, routing numbers, and signatures match master agreement.",
+    poNumber: "PO-2026-1002",
+    associatedInvestigationId: "AST-101",
+    items: [
+      {
+        description: "Cloud Compute Fleet & Kubernetes Node Allocation - Nov 2026",
+        quantity: 1,
+        unitPrice: "$124,300.00",
+        total: "$124,300.00",
+      },
+    ],
   },
 ];
 
