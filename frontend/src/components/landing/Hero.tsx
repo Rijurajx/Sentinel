@@ -13,14 +13,6 @@ export function Hero() {
       <div className="absolute inset-0 bg-grid-pattern opacity-30 radial-mask pointer-events-none -z-10" />
 
       <div className="max-w-5xl mx-auto px-6 text-center flex flex-col items-center">
-        {/* Monochromatic System Notice (Clean, non-pill, Linear-style metadata header) */}
-        <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-md border border-white/[0.08] bg-white/[0.02] text-xs font-mono text-[#8a8f98] mb-8">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#5e6ad2]" />
-          <span className="text-[#f7f8f8] font-medium">SENTINEL 2.0</span>
-          <span className="text-white/20">/</span>
-          <span>Deterministic Financial Threat Intelligence</span>
-        </div>
-
         {/* Hero Display Headline (Linear Exact Sizing & Balanced Tracking) */}
         <h1 className="text-4xl sm:text-6xl lg:text-7xl font-semibold tracking-[-0.035em] text-[#f7f8f8] leading-[1.05] max-w-4xl text-balance">
           Purpose-built financial threat intelligence & protection.
