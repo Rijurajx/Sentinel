@@ -222,3 +222,72 @@ export async function generateIncidentDossier(data: {
     };
   }
 }
+
+/**
+ * 5. Gmail Threat Radar: Automated Email Ingestion & Legitimacy vs Fraud Classifier
+ */
+export interface GmailScannedEmail {
+  id: string;
+  sender: string;
+  sender_name: string;
+  sender_domain: string;
+  recipient: string;
+  subject: string;
+  snippet: string;
+  body_text: string;
+  date: string;
+  has_attachment: boolean;
+  attachment_names: string[];
+  spf_dkim: string;
+  is_fraud: boolean;
+  classification: "LEGITIMATE" | "FRAUDULENT";
+  threat_category: string;
+  severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+  confidence_score: number;
+  urgency_indicators: string[];
+  extracted_entities: Array<{ name: string; type: string; risk_score: number }>;
+  recommended_action: string;
+  verdict_summary: string;
+}
+
+export interface GmailScanResponse {
+  status: string;
+  connected_account: string;
+  total_scanned: number;
+  fraud_detected_count: number;
+  legitimate_count: number;
+  prevented_outflow: string;
+  emails: GmailScannedEmail[];
+  connection_error?: string | null;
+}
+
+export async function scanGmailInbox(data?: {
+  username?: string;
+  app_password?: string;
+  use_live_gmail?: boolean;
+  max_emails?: number;
+}): Promise<GmailScanResponse> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/gmail/scan`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data || {}),
+    });
+    if (!res.ok) {
+      throw new Error(`Gmail API returned ${res.status}`);
+    }
+    return await res.json();
+  } catch (err: any) {
+    console.warn("Gmail API error:", err);
+    return {
+      status: "error",
+      connected_account: data?.username || "No Gmail Account Connected",
+      total_scanned: 0,
+      fraud_detected_count: 0,
+      legitimate_count: 0,
+      prevented_outflow: "/bin/zsh.00",
+      emails: [],
+      connection_error: err?.message || "Failed to reach backend IMAP service.",
+    };
+  }
+}

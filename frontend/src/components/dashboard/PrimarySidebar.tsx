@@ -20,6 +20,7 @@ import {
   Settings,
   LogOut,
   FolderPlus,
+  Mail,
 } from "lucide-react";
 import { SentinelLogo } from "@/components/ui/SentinelLogo";
 import { useAuth } from "@/context/AuthContext";
@@ -82,7 +83,7 @@ export function PrimarySidebar({
     { id: "graph", label: "TrustGraph", icon: GitFork },
     { id: "suppliers", label: "Suppliers", icon: Building2 },
     { id: "invoices", label: "Invoices", icon: FileText },
-    { id: "scamshield", label: "ScamShield Ingest", icon: Scan },
+    { id: "scamshield", label: "Gmail Radar", icon: Mail },
     { id: "reports", label: "Intelligence Dossiers", icon: FileText },
   ];
 

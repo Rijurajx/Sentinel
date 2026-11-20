@@ -23,6 +23,8 @@ import {
   Layers,
   PanelRightClose,
   PanelRightOpen,
+  PanelLeftClose,
+  PanelLeftOpen,
   Copy,
   Check,
   X,
@@ -42,6 +44,8 @@ interface TrustGraphWorkspaceProps {
   onOpenQuickCreate?: (tab?: "investigation" | "supplier" | "invoice" | "upload" | "entity") => void;
   onCompileDossier?: () => void;
   workspaceId: string;
+  isMiddleCollapsed?: boolean;
+  onToggleMiddlePane?: () => void;
 }
 
 interface VisualNode {
@@ -73,6 +77,8 @@ export function TrustGraphWorkspace({
   onOpenQuickCreate,
   onCompileDossier,
   workspaceId,
+  isMiddleCollapsed,
+  onToggleMiddlePane,
 }: TrustGraphWorkspaceProps) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(selectedEntityId || null);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -387,8 +393,22 @@ export function TrustGraphWorkspace({
     <main className="flex-1 h-screen bg-[#08090a] overflow-hidden flex flex-col z-10 select-text">
       {/* 1. Clean Top Header Bar */}
       <header className="h-12 px-4 sm:px-6 border-b border-white/[0.08] flex items-center justify-between sticky top-0 bg-[#08090a]/95 backdrop-blur-md z-20 shrink-0 gap-3">
-        {/* Left Breadcrumb */}
+        {/* Left Breadcrumb & Pane Toggle */}
         <div className="flex items-center gap-2.5 min-w-0">
+          {onToggleMiddlePane && (
+            <button
+              type="button"
+              onClick={onToggleMiddlePane}
+              className="p-1.5 rounded-lg border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.06] text-[#8a8f98] hover:text-white transition-colors shrink-0"
+              title={isMiddleCollapsed ? "Expand middle pane" : "Collapse middle pane"}
+            >
+              {isMiddleCollapsed ? (
+                <PanelLeftOpen className="w-3.5 h-3.5 text-[#5e6ad2]" />
+              ) : (
+                <PanelLeftClose className="w-3.5 h-3.5" />
+              )}
+            </button>
+          )}
           <div className="flex items-center gap-2 shrink-0">
             <span className="w-2 h-2 rounded-full bg-[#5e6ad2] animate-pulse" />
             <span className="font-mono text-xs text-[#8a8f98] font-medium">TRUSTGRAPH-01</span>

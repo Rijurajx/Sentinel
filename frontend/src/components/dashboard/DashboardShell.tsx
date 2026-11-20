@@ -13,11 +13,12 @@ import { InboxWorkspace } from "./InboxWorkspace";
 import { ReviewWorkspace } from "./ReviewWorkspace";
 import { DossierWorkspace } from "./DossierWorkspace";
 import { TrustGraphWorkspace } from "./TrustGraphWorkspace";
+import { GmailRadarWorkspace } from "./GmailRadarWorkspace";
 import { ProfileSettingsPane } from "./ProfileSettingsPane";
 import { CommandPalette } from "./CommandPalette";
 import { QuickCreateModal } from "./QuickCreateModal";
 import { useAuth } from "@/context/AuthContext";
-import { generateIncidentDossier } from "@/lib/apiClient";
+import { generateIncidentDossier, GmailScannedEmail } from "@/lib/apiClient";
 import {
   InvestigationItem,
   SupplierItem,
@@ -456,6 +457,23 @@ export function DashboardShell() {
     }
   };
 
+  const handleQuarantineThreat = async (threatData: {
+    email: GmailScannedEmail;
+    invoice?: InvoiceItem;
+    alert?: InboxAlertItem;
+    evidence?: EvidenceItem;
+  }) => {
+    if (threatData.alert) {
+      await addInboxAlertDoc(activeWsId, threatData.alert);
+    }
+    if (threatData.evidence) {
+      await addEvidenceDoc(activeWsId, threatData.evidence);
+    }
+    if (threatData.invoice) {
+      await addInvoiceDoc(activeWsId, threatData.invoice);
+    }
+  };
+
   // Domain-wide Snooze toggler
   const handleToggleSnooze = (domain: string, id: string) => {
     if (domain === "inbox") {
@@ -676,7 +694,12 @@ export function DashboardShell() {
         onSelectView={(view) => {
           setActiveView(view);
           setIsEditingProfile(false);
-          if (isMiddleCollapsed) setIsMiddleCollapsed(false);
+          // Auto-collapse middle pane for full-width views (graph, pulse, gmail radar)
+          if (view === "graph" || view === "command" || view === "scamshield") {
+            setIsMiddleCollapsed(true);
+          } else {
+            setIsMiddleCollapsed(false);
+          }
 
           // Auto-focus first item of the selected view if none selected
           if (view === "suppliers" && suppliers.length > 0 && !selectedSupplierId) {
@@ -807,7 +830,13 @@ export function DashboardShell() {
             setSuppliers((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
           }}
         />
-      ) : activeView === "evidence" || activeView === "scamshield" ? (
+      ) : activeView === "scamshield" ? (
+        <GmailRadarWorkspace
+          workspaceId={activeWsId}
+          onQuarantineThreat={handleQuarantineThreat}
+          onSelectView={(v) => setActiveView(v)}
+        />
+      ) : activeView === "evidence" ? (
         <EvidenceWorkspace
           evidence={currentEvidence}
           workspaceId={activeWsId}
@@ -850,6 +879,8 @@ export function DashboardShell() {
           onOpenQuickCreate={handleOpenQuickCreate}
           onCompileDossier={handleCompileDossier}
           workspaceId={activeWsId}
+          isMiddleCollapsed={isMiddleCollapsed}
+          onToggleMiddlePane={() => setIsMiddleCollapsed(!isMiddleCollapsed)}
         />
       ) : (
         /* Default: "investigations" */

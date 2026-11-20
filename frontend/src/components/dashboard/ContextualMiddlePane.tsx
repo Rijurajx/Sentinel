@@ -99,10 +99,6 @@ export function ContextualMiddlePane({
   const [filterTab, setFilterTab] = useState<"all" | "unreviewed" | "snoozed">("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  if (isCollapsed) {
-    return null;
-  }
-
   // 1. Helper: Domain-aware Snooze state checker
   const checkIsSnoozed = (item: any, domain: string): boolean => {
     if (item.isSnoozed === true) return true;
@@ -395,6 +391,10 @@ export function ContextualMiddlePane({
       </div>
     );
   };
+
+  if (isCollapsed) {
+    return null;
+  }
 
   return (
     <section className="w-80 sm:w-88 h-screen bg-[#08090a] border-r border-white/[0.08] flex flex-col shrink-0 select-none z-20 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
