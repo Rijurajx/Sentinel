@@ -86,6 +86,11 @@ export interface EvidenceItem {
   uploadedAt: string;
   status: "Extracted" | "Flagged" | "Verified";
   fileSize: string;
+  fileData?: string;
+  mimeType?: string;
+  threatSummary?: string;
+  threatCategory?: string;
+  severity?: string;
 }
 
 export interface EntityItem {

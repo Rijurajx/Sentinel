@@ -25,9 +25,12 @@ class BankVerificationResponse(BaseModel):
 # ScamShield Threat Analysis Models
 class EvidenceAnalysisRequest(BaseModel):
     content: str
-    evidence_type: str = "email"  # "email", "invoice", "sms", "domain"
+    evidence_type: str = "email"  # "email", "invoice", "sms", "domain", "screenshot", "pdf"
     sender: Optional[str] = None
     subject: Optional[str] = None
+    file_data: Optional[str] = None  # base64 encoded document or screenshot
+    file_name: Optional[str] = None
+    mime_type: Optional[str] = None
 
 class ExtractedEntity(BaseModel):
     name: str

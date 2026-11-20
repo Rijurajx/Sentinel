@@ -12,6 +12,9 @@ import {
   CreditCard,
   FileText,
   Loader2,
+  UploadCloud,
+  Image as ImageIcon,
+  Trash2,
 } from "lucide-react";
 import { SentinelLogo } from "@/components/ui/SentinelLogo";
 import {
@@ -68,6 +71,42 @@ export function QuickCreateModal({
   const [evType, setEvType] = useState<"Invoice PDF" | "Email" | "Screenshot" | "Domain Telemetry">("Invoice PDF");
   const [evSize, setEvSize] = useState("450 KB");
   const [evIncident, setEvIncident] = useState("INC-NEW");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [fileMime, setFileMime] = useState<string>("");
+  const [isDragging, setIsDragging] = useState(false);
+  const [extractedOrInputText, setExtractedOrInputText] = useState("");
+
+  const handleFileChange = (file: File) => {
+    setSelectedFile(file);
+    setEvTitle(file.name);
+    const sizeInKB = Math.round(file.size / 1024);
+    setEvSize(sizeInKB > 1024 ? `${(sizeInKB / 1024).toFixed(1)} MB` : `${sizeInKB} KB`);
+    setFileMime(file.type || "application/octet-stream");
+
+    if (file.type.includes("pdf") || file.name.endsWith(".pdf")) {
+      setEvType("Invoice PDF");
+    } else if (file.type.startsWith("image/") || /\.(png|jpe?g|webp)$/i.test(file.name)) {
+      setEvType("Screenshot");
+    } else if (file.name.endsWith(".eml") || file.name.endsWith(".msg")) {
+      setEvType("Email");
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setFilePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    if (file.type.startsWith("text/") || file.name.endsWith(".txt") || file.name.endsWith(".eml")) {
+      const textReader = new FileReader();
+      textReader.onload = (e) => {
+        const textContent = (e.target?.result as string) || "";
+        setExtractedOrInputText(textContent.slice(0, 3000));
+      };
+      textReader.readAsText(file);
+    }
+  };
 
   // Entity State
   const [entValue, setEntValue] = useState("");
@@ -135,25 +174,40 @@ export function QuickCreateModal({
         setSupBranch("");
         setSupInvoiced("");
       } else if (selectedAction === "upload" && onCreateEvidence) {
-        if (!evTitle.trim()) return;
-        
-        // Live ScamShield Analysis via Backend
+        if (!evTitle.trim() && !selectedFile) return;
+
+        const effectiveTitle = evTitle.trim() || selectedFile?.name || "Uploaded_Evidence_Document";
+        const analysisPrompt = `${effectiveTitle}. ${extractedOrInputText}`.trim();
+
+        // Live ScamShield Analysis via Backend (with multimodal file support)
         const analysis = await analyzeThreatEvidence({
-          content: evTitle.trim(),
+          content: analysisPrompt,
           evidence_type: evType.toLowerCase(),
+          file_data: filePreview || undefined,
+          file_name: selectedFile?.name || effectiveTitle,
+          mime_type: fileMime || undefined,
         });
 
         const newEv: EvidenceItem = {
           id: `EV-${Date.now()}`,
-          title: evTitle.trim(),
+          title: effectiveTitle,
           type: evType,
           fileSize: evSize || "240 KB",
           associatedInvestigationId: evIncident.trim() || "GLOBAL-QUEUE",
           uploadedAt: "Just now",
           status: analysis.threat_detected ? "Flagged" : "Extracted",
+          fileData: filePreview || undefined,
+          mimeType: fileMime || undefined,
+          threatSummary: analysis.summary,
+          threatCategory: analysis.threat_category,
+          severity: analysis.severity,
         };
         onCreateEvidence(newEv);
         setEvTitle("");
+        setSelectedFile(null);
+        setFilePreview(null);
+        setFileMime("");
+        setExtractedOrInputText("");
       } else if (selectedAction === "entity" && onCreateEntity) {
         if (!entValue.trim()) return;
         const newEnt: EntityItem = {
@@ -358,14 +412,99 @@ export function QuickCreateModal({
             </div>
           )}
 
-          {/* TAB 3: EVIDENCE */}
+          {/* TAB 3: EVIDENCE / MULTIMODAL INGESTION */}
           {selectedAction === "upload" && (
             <div className="space-y-3 animate-fade-in">
+              {/* Drag & Drop File Upload Area */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    handleFileChange(e.dataTransfer.files[0]);
+                  }
+                }}
+                className={`border-2 border-dashed rounded-xl p-4 text-center transition-all cursor-pointer relative ${
+                  isDragging
+                    ? "border-[#5e6ad2] bg-[#5e6ad2]/10"
+                    : "border-white/10 hover:border-white/20 bg-white/[0.015]"
+                }`}
+              >
+                <input
+                  type="file"
+                  id="evidence-file-input"
+                  accept=".pdf,image/png,image/jpeg,image/webp,.eml,.txt"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      handleFileChange(e.target.files[0]);
+                    }
+                  }}
+                />
+
+                {selectedFile ? (
+                  <div className="flex items-center justify-between gap-3 text-left">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {filePreview && fileMime.startsWith("image/") ? (
+                        <img
+                          src={filePreview}
+                          alt="preview"
+                          className="w-12 h-12 rounded-lg object-cover border border-white/10 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-[#5e6ad2]/15 border border-[#5e6ad2]/30 flex items-center justify-center shrink-0">
+                          {evType === "Invoice PDF" ? (
+                            <FileText className="w-5 h-5 text-[#5e6ad2]" />
+                          ) : (
+                            <FileUp className="w-5 h-5 text-[#5e6ad2]" />
+                          )}
+                        </div>
+                      )}
+                      <div className="truncate">
+                        <div className="text-xs font-medium text-white truncate">
+                          {selectedFile.name}
+                        </div>
+                        <div className="text-[11px] text-[#8a8f98] font-mono">
+                          {evSize} • {evType} • Ready for ScamShield AI
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedFile(null);
+                        setFilePreview(null);
+                        setFileMime("");
+                      }}
+                      className="p-1.5 rounded hover:bg-white/10 text-[#8a8f98] hover:text-[#eb5757] transition-colors"
+                      title="Remove file"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label htmlFor="evidence-file-input" className="cursor-pointer block py-2">
+                    <UploadCloud className="w-7 h-7 text-[#5e6ad2] mx-auto mb-2 opacity-90" />
+                    <div className="text-xs font-medium text-white">
+                      Click to upload or drag & drop files
+                    </div>
+                    <div className="text-[11px] text-[#8a8f98] mt-1">
+                      PDF invoices, payment screenshots (PNG/JPG), email threads (.eml)
+                    </div>
+                  </label>
+                )}
+              </div>
+
               <div className="space-y-1">
-                <label className="text-[11px] text-[#8a8f98]">Document / Evidence Title</label>
+                <label className="text-[11px] text-[#8a8f98]">Document / Subject Title</label>
                 <input
                   type="text"
-                  autoFocus
                   placeholder="e.g. Urgent_Invoice_INV-8891.pdf"
                   value={evTitle}
                   onChange={(e) => setEvTitle(e.target.value)}
@@ -373,17 +512,28 @@ export function QuickCreateModal({
                 />
               </div>
 
+              <div className="space-y-1">
+                <label className="text-[11px] text-[#8a8f98]">Accompanying Text / Threat Context (Optional)</label>
+                <textarea
+                  rows={2}
+                  placeholder="Paste email body, wire urgency instructions, or suspicious vendor notes..."
+                  value={extractedOrInputText}
+                  onChange={(e) => setExtractedOrInputText(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-white/20 resize-none"
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[11px] text-[#8a8f98]">Evidence Type</label>
+                  <label className="text-[11px] text-[#8a8f98]">Evidence Classification</label>
                   <select
                     value={evType}
                     onChange={(e) => setEvType(e.target.value as any)}
                     className="w-full px-3 py-2 rounded-lg bg-[#08090a] border border-white/[0.08] text-xs text-[#f7f8f8] focus:outline-none focus:border-white/20"
                   >
                     <option value="Invoice PDF">Invoice PDF</option>
-                    <option value="Email">Email Thread</option>
                     <option value="Screenshot">Screenshot</option>
+                    <option value="Email">Email Thread</option>
                     <option value="Domain Telemetry">Domain Telemetry</option>
                   </select>
                 </div>

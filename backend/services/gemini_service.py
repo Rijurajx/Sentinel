@@ -48,14 +48,29 @@ You MUST respond with valid JSON strictly conforming to this schema:
 Do not include any markdown fences or extraneous text outside the JSON object.
 """
             full_prompt = f"{system_prompt}\n\nEvidence Content to Analyze:\n{req.content}\n"
+            if req.file_name:
+                full_prompt += f"Attached File Name: {req.file_name}\n"
             if req.sender:
                 full_prompt += f"Sender: {req.sender}\n"
             if req.subject:
                 full_prompt += f"Subject: {req.subject}\n"
 
+            contents = [full_prompt]
+            if req.file_data and req.mime_type:
+                import base64
+                try:
+                    raw_b64 = req.file_data
+                    if "," in raw_b64:
+                        raw_b64 = raw_b64.split(",", 1)[1]
+                    file_bytes = base64.b64decode(raw_b64)
+                    part = types.Part.from_bytes(data=file_bytes, mime_type=req.mime_type)
+                    contents.append(part)
+                except Exception as b64_err:
+                    print("Error parsing base64 file data:", b64_err)
+
             response = client.models.generate_content(
                 model=TARGET_MODEL,
-                contents=full_prompt
+                contents=contents
             )
             raw_text = response.text.strip()
             if raw_text.startswith("```json"):
@@ -101,7 +116,7 @@ def heuristic_threat_analysis(req: EvidenceAnalysisRequest) -> ScamShieldAnalysi
     """
     Sub-millisecond rule-based cyber threat extraction when Gemini API is busy or ratelimited.
     """
-    text = req.content.lower()
+    text = f"{req.content} {req.file_name or ''} {req.subject or ''}".lower()
     urgency_terms = ["urgent", "immediately", "wire today", "cutoff", "confidential", "asap", "within 24 hours", "do not call", "strictly confidential"]
     coercion_terms = ["ceo request", "executive order", "audit penalty", "breach of contract", "escalate to board"]
 

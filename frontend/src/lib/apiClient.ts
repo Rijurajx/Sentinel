@@ -126,6 +126,9 @@ export async function analyzeThreatEvidence(data: {
   evidence_type?: string;
   sender?: string;
   subject?: string;
+  file_data?: string;
+  file_name?: string;
+  mime_type?: string;
 }): Promise<ScamShieldResult> {
   try {
     const res = await fetch(`${API_BASE}/api/v1/scamshield/analyze`, {

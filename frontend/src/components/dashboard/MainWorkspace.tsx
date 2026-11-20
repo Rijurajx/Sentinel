@@ -30,6 +30,7 @@ import {
   Database,
   Loader2,
   ShieldCheck,
+  UploadCloud,
 } from "lucide-react";
 import Link from "next/link";
 import { analyzeThreatEvidence, ScamShieldResult } from "@/lib/apiClient";
@@ -609,32 +610,97 @@ export function MainWorkspace({
 
         {/* TAB 3: EVIDENCE FILES */}
         {activeTab === "evidence" && (
-          <div className="space-y-3 animate-fade-in">
+          <div className="space-y-4 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs font-semibold text-[#f7f8f8]">
+                  Multimodal Evidence Repository
+                </span>
+                <p className="text-[11px] text-[#8a8f98]">
+                  Ingested invoice PDFs, payment screenshots, and email telemetry analyzed by ScamShield
+                </p>
+              </div>
+              {onOpenQuickCreate && (
+                <button
+                  type="button"
+                  onClick={() => onOpenQuickCreate("upload")}
+                  className="px-2.5 py-1 rounded bg-[#5e6ad2] hover:bg-[#6f7be8] text-white text-xs font-medium flex items-center gap-1.5 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Upload File / PDF</span>
+                </button>
+              )}
+            </div>
+
             <div className="rounded-xl border border-white/[0.08] bg-white/[0.015] divide-y divide-white/[0.04]">
               {evidenceList.length > 0 ? (
                 evidenceList.map((ev) => (
-                  <div key={ev.id} className="p-3.5 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-4 h-4 text-[#8a8f98]" />
-                      <div>
-                        <span className="font-medium text-[#f7f8f8] block">{ev.title}</span>
-                        <span className="text-[10px] text-[#62666d] font-mono">
-                          Format: {ev.type} • {ev.fileSize} • Uploaded {ev.uploadedAt}
-                        </span>
+                  <div key={ev.id} className="p-4 space-y-2.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {ev.fileData && ev.fileData.startsWith("data:image") ? (
+                          <img
+                            src={ev.fileData}
+                            alt="preview"
+                            className="w-12 h-12 rounded-lg object-cover border border-white/10 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shrink-0">
+                            {ev.type === "Invoice PDF" ? (
+                              <FileText className="w-5 h-5 text-[#f0b96d]" />
+                            ) : ev.type === "Screenshot" ? (
+                              <Scan className="w-5 h-5 text-[#5e6ad2]" />
+                            ) : (
+                              <FileText className="w-5 h-5 text-[#8a8f98]" />
+                            )}
+                          </div>
+                        )}
+                        <div className="truncate">
+                          <span className="font-medium text-[#f7f8f8] block truncate">{ev.title}</span>
+                          <span className="text-[11px] text-[#8a8f98] font-mono">
+                            {ev.type} • {ev.fileSize} • Uploaded {ev.uploadedAt}
+                          </span>
+                        </div>
                       </div>
+                      <span
+                        className={`text-[10px] font-mono px-2 py-0.5 rounded shrink-0 ${
+                          ev.status === "Flagged"
+                            ? "bg-[#eb5757]/15 text-[#eb5757] border border-[#eb5757]/30"
+                            : "bg-[#4ebe82]/15 text-[#4ebe82] border border-[#4ebe82]/30"
+                        }`}
+                      >
+                        {ev.status === "Flagged" ? "🚨 THREAT FLAGGED" : "✓ EXTRACTED & CLEAN"}
+                      </span>
                     </div>
-                    <span
-                      className={`text-[10px] font-mono px-2 py-0.5 rounded ${
-                        ev.status === "Flagged" ? "bg-[#eb5757]/10 text-[#eb5757]" : "bg-white/[0.04] text-[#8a8f98]"
-                      }`}
-                    >
-                      {ev.status}
-                    </span>
+
+                    {ev.threatSummary && (
+                      <div className="p-2.5 rounded-lg bg-black/30 border border-white/[0.06] text-[11px] text-[#8a8f98] font-mono flex items-start gap-2">
+                        <Sparkles className="w-3.5 h-3.5 text-[#5e6ad2] shrink-0 mt-0.5" />
+                        <div>
+                          <span className="text-white font-medium">ScamShield Intel: </span>
+                          <span>{ev.threatSummary}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))
               ) : (
-                <div className="p-8 text-center text-xs text-[#8a8f98]">
-                  No evidence files attached to this investigation yet. Click "+ Upload Evidence" to ingest.
+                <div className="p-10 text-center space-y-3 text-xs text-[#8a8f98]">
+                  <UploadCloud className="w-8 h-8 text-[#62666d] mx-auto" />
+                  <div className="space-y-1">
+                    <div className="font-medium text-white">No evidence files attached yet</div>
+                    <div className="text-[11px]">Upload invoice PDFs, screenshots, or email text to initiate multimodal AI scanning.</div>
+                  </div>
+                  {onOpenQuickCreate && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenQuickCreate("upload")}
+                      className="px-3 py-1.5 rounded-lg bg-[#5e6ad2] hover:bg-[#6f7be8] text-white font-medium transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Upload Evidence File</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>
