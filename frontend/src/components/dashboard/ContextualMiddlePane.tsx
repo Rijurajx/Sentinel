@@ -55,6 +55,7 @@ interface ContextualMiddlePaneProps {
   onSelectReview?: (id: string) => void;
   selectedDossierId?: string;
   onSelectDossier?: (id: string) => void;
+  onCompileDossier?: () => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   onOpenQuickCreate?: (tab?: "investigation" | "supplier" | "invoice" | "upload" | "entity") => void;
@@ -88,6 +89,7 @@ export function ContextualMiddlePane({
   onSelectReview,
   selectedDossierId,
   onSelectDossier,
+  onCompileDossier,
   isCollapsed,
   onToggleCollapse,
   onOpenQuickCreate,
@@ -407,15 +409,16 @@ export function ContextualMiddlePane({
           </div>
 
           <div className="flex items-center gap-1.5">
-            {onOpenQuickCreate && (
+            {(onOpenQuickCreate || onCompileDossier) && (
               <button
                 type="button"
                 onClick={() => {
-                  if (activeView === "suppliers") onOpenQuickCreate("supplier");
-                  else if (activeView === "evidence" || activeView === "scamshield") onOpenQuickCreate("upload");
-                  else if (activeView === "graph") onOpenQuickCreate("entity");
-                  else if (activeView === "invoices") onOpenQuickCreate("invoice");
-                  else onOpenQuickCreate("investigation");
+                  if (activeView === "reports" && onCompileDossier) onCompileDossier();
+                  else if (activeView === "suppliers") onOpenQuickCreate?.("supplier");
+                  else if (activeView === "evidence" || activeView === "scamshield") onOpenQuickCreate?.("upload");
+                  else if (activeView === "graph") onOpenQuickCreate?.("entity");
+                  else if (activeView === "invoices") onOpenQuickCreate?.("invoice");
+                  else onOpenQuickCreate?.("investigation");
                 }}
                 className="px-2 py-0.5 rounded bg-[#5e6ad2] hover:bg-[#6f7be8] text-white text-[11px] font-medium flex items-center gap-1 transition-colors shadow-sm shadow-[#5e6ad2]/20"
               >
@@ -429,6 +432,8 @@ export function ContextualMiddlePane({
                     ? "Ingest"
                     : activeView === "graph"
                     ? "Add Entity"
+                    : activeView === "reports"
+                    ? "Compile Dossier"
                     : "New Case"}
                 </span>
               </button>

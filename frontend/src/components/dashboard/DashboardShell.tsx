@@ -12,10 +12,12 @@ import { PulseWorkspace } from "./PulseWorkspace";
 import { InboxWorkspace } from "./InboxWorkspace";
 import { ReviewWorkspace } from "./ReviewWorkspace";
 import { DossierWorkspace } from "./DossierWorkspace";
+import { TrustGraphWorkspace } from "./TrustGraphWorkspace";
 import { ProfileSettingsPane } from "./ProfileSettingsPane";
 import { CommandPalette } from "./CommandPalette";
 import { QuickCreateModal } from "./QuickCreateModal";
 import { useAuth } from "@/context/AuthContext";
+import { generateIncidentDossier } from "@/lib/apiClient";
 import {
   InvestigationItem,
   SupplierItem,
@@ -42,6 +44,7 @@ import {
   addInvoiceDoc,
   addInboxAlertDoc,
   addReviewDoc,
+  addDossierDoc,
   updateInvestigationDoc,
   updateSupplierDoc,
   updateEvidenceDoc,
@@ -396,6 +399,63 @@ export function DashboardShell() {
     );
   };
 
+  const handleCompileDossier = async (customInv?: InvestigationItem) => {
+    const inv = customInv || currentInvestigation;
+    const sup = currentSupplier || (suppliers.length > 0 ? suppliers[0] : null);
+    const invc = currentInvoice || (invoices.length > 0 ? invoices[0] : null);
+
+    const investigationId = inv?.id || invc?.id || `INC-${Math.floor(100 + Math.random() * 900)}`;
+    const supplierName = inv?.targetEntity || invc?.vendorName || sup?.name || "Asterion Supplies Pvt Ltd";
+    const accountNumber = invc?.payeeAccount || sup?.accountNumber || "999988887777";
+    const ifsc = invc?.payeeIfsc || sup?.ifsc || "DEMO0002222";
+    const amount = inv?.amount || invc?.amount || "$485,000.00";
+
+    const dossierId = `DOS-${Math.floor(100 + Math.random() * 900)}`;
+
+    try {
+      const apiResult = await generateIncidentDossier({
+        investigation_id: investigationId,
+        supplier_name: supplierName,
+        account_number: accountNumber,
+        ifsc_or_iban: ifsc,
+        evidence_text: inv?.description || invc?.discrepancyNote || `Urgent payment diversion identified for ${supplierName}. Bank verification mismatch on IFSC ${ifsc}.`,
+      });
+
+      const newDossier: DossierItem = {
+        id: dossierId,
+        title: inv
+          ? `Executive Threat Dossier: ${inv.title}`
+          : invc
+          ? `Executive Fraud Interception Dossier: ${invc.id} (${invc.vendorName})`
+          : `Unified Threat Dossier: ${supplierName} Fraud Interception`,
+        classification: "RESTRICTED // TREASURY FRAUD INTEL",
+        generatedDate: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+        associatedIncidentId: investigationId,
+        targetSyndicate: (apiResult.graph_topology as any)?.syndicate_name || "Crimson Typhoon / Scattered Spider TC-948",
+        preventedLoss: amount,
+        threatScore: apiResult.overall_threat_score || 94,
+        executiveSummary: apiResult.executive_summary || `Consolidated forensic analysis confirmed active payment interception targeting ${supplierName}. FinGuard intercepted banking diversion (mule routing), and ScamShield AI flagged urgent social engineering. Outgoing wire blocked.`,
+        provenanceEntitiesCount: 5,
+        status: "Active Brief",
+        actionableRecommendations: apiResult.actionable_remediation && apiResult.actionable_remediation.length > 0
+          ? apiResult.actionable_remediation
+          : [
+              "Freeze all pending wire/ACH disbursements to unverified beneficiary accounts.",
+              "Conduct out-of-band biometric/voice verification with authorized supplier executive.",
+              "Report destination mule account and IFSC routing code to Reserve Bank / Law Enforcement portal.",
+              "Lock down vendor payment routing in FinGuard master ledger pending dual authorization.",
+            ],
+        isRead: false,
+      };
+
+      await addDossierDoc(activeWsId, newDossier);
+      setSelectedDossierId(dossierId);
+      setActiveView("reports");
+    } catch (err) {
+      console.warn("Error compiling dossier:", err);
+    }
+  };
+
   // Domain-wide Snooze toggler
   const handleToggleSnooze = (domain: string, id: string) => {
     if (domain === "inbox") {
@@ -704,6 +764,7 @@ export function DashboardShell() {
         isCollapsed={isMiddleCollapsed}
         onToggleCollapse={() => setIsMiddleCollapsed(true)}
         onOpenQuickCreate={handleOpenQuickCreate}
+        onCompileDossier={handleCompileDossier}
         onToggleRead={handleToggleRead}
         onToggleSnooze={handleToggleSnooze}
       />
@@ -732,6 +793,7 @@ export function DashboardShell() {
         <DossierWorkspace
           dossier={currentDossier}
           workspaceId={activeWsId}
+          onCompileDossier={handleCompileDossier}
           onDossierUpdated={(updated) => {
             setDossiers((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
           }}
@@ -772,8 +834,25 @@ export function DashboardShell() {
           invoices={invoices}
           onSelectView={(v) => setActiveView(v)}
         />
+      ) : activeView === "graph" ? (
+        <TrustGraphWorkspace
+          entities={entities}
+          suppliers={suppliers}
+          invoices={invoices}
+          investigations={investigations}
+          evidenceList={evidenceList}
+          selectedEntityId={selectedEntityId}
+          onSelectEntity={(id) => {
+            setSelectedEntityId(id);
+            handleToggleRead("graph", id, true);
+            setIsEditingProfile(false);
+          }}
+          onOpenQuickCreate={handleOpenQuickCreate}
+          onCompileDossier={handleCompileDossier}
+          workspaceId={activeWsId}
+        />
       ) : (
-        /* Default: "investigations" (My issues) and "graph" */
+        /* Default: "investigations" */
         <MainWorkspace
           investigation={currentInvestigation}
           workspaceName={activeWorkspace?.name || "Sentinel"}
@@ -783,10 +862,11 @@ export function DashboardShell() {
           onToggleStar={() => setIsStarred(!isStarred)}
           isStarred={isStarred}
           onOpenQuickCreate={() => handleOpenQuickCreate()}
+          onCompileDossier={handleCompileDossier}
           suppliers={suppliers}
           evidenceList={evidenceList}
           entities={entities}
-          initialTab={activeView === "graph" ? "graph" : "overview"}
+          initialTab="overview"
         />
       )}
 

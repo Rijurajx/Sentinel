@@ -45,6 +45,7 @@ interface MainWorkspaceProps {
   isStarred?: boolean;
   onLoadDemoTelemetry?: () => void;
   onOpenQuickCreate?: (tab?: "investigation" | "supplier" | "invoice" | "upload" | "entity") => void;
+  onCompileDossier?: () => void;
   suppliers?: SupplierItem[];
   evidenceList?: EvidenceItem[];
   entities?: EntityItem[];
@@ -61,6 +62,7 @@ export function MainWorkspace({
   isStarred = false,
   onLoadDemoTelemetry,
   onOpenQuickCreate,
+  onCompileDossier,
   suppliers = [],
   evidenceList = [],
   entities = [],
@@ -397,24 +399,36 @@ export function MainWorkspace({
                   <Sparkles className="w-3.5 h-3.5 text-[#5e6ad2]" />
                   <span>Triage Intelligence</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleRunLiveTriage}
-                  disabled={isAnalyzing}
-                  className="px-2 py-0.5 rounded bg-white/[0.04] hover:bg-white/[0.08] text-[11px] text-[#8a8f98] hover:text-white transition-colors flex items-center gap-1.5 disabled:opacity-50"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <Loader2 className="w-3 h-3 animate-spin text-[#5e6ad2]" />
-                      <span>Analyzing with Gemini...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-3 h-3 text-[#5e6ad2]" />
-                      <span>Run Live AI Triage</span>
-                    </>
+                <div className="flex items-center gap-2">
+                  {onCompileDossier && (
+                    <button
+                      type="button"
+                      onClick={onCompileDossier}
+                      className="px-2.5 py-0.5 rounded bg-[#5e6ad2] hover:bg-[#6f7be8] text-white text-[11px] font-medium transition-colors flex items-center gap-1.5 shadow-sm shadow-[#5e6ad2]/20"
+                    >
+                      <FileText className="w-3 h-3" />
+                      <span>Compile Dossier</span>
+                    </button>
                   )}
-                </button>
+                  <button
+                    type="button"
+                    onClick={handleRunLiveTriage}
+                    disabled={isAnalyzing}
+                    className="px-2 py-0.5 rounded bg-white/[0.04] hover:bg-white/[0.08] text-[11px] text-[#8a8f98] hover:text-white transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    {isAnalyzing ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin text-[#5e6ad2]" />
+                        <span>Analyzing with Gemini...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3 h-3 text-[#5e6ad2]" />
+                        <span>Run Live AI Triage</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Suggestions Row */}
