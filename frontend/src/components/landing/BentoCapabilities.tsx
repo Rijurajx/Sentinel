@@ -1,217 +1,160 @@
 "use client";
 
-import { Scan, Network, ShieldCheck, ArrowRight, Check, Sparkles } from "lucide-react";
-import Link from "next/link";
+import React from "react";
 
 export function BentoCapabilities() {
   return (
-    <section id="features" className="py-24 sm:py-32 relative overflow-hidden">
-      {/* Background Soft Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[550px] bg-[radial-gradient(ellipse_at_center,rgba(94,106,210,0.08),transparent_70%)] pointer-events-none -z-10" />
-
-      <div className="max-w-6xl mx-auto px-6">
-        {/* Section Header (Linear Style) */}
-        <div className="flex flex-col items-center text-center mb-20">
-          <span className="text-[#5e6ad2] text-xs font-mono font-medium tracking-wider uppercase mb-3">
-            Core Architecture
-          </span>
-
-          <h2 className="text-3xl sm:text-5xl font-medium tracking-[-0.03em] text-[#f7f8f8] text-balance">
-            Three distinct systems. <br />
-            <span className="linear-hero-text">Zero room for error.</span>
+    <section id="engines" className="py-24 sm:py-32 relative overflow-hidden bg-[#08090a] border-t border-white/[0.08]">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8">
+        {/* Section Header — Linear Editorial Typography */}
+        <div className="flex flex-col items-start max-w-4xl mb-16 sm:mb-20">
+          <h2 className="text-3xl sm:text-5xl lg:text-[54px] font-normal tracking-[-0.035em] text-[#f7f8f8] leading-[1.08] text-balance mb-5">
+            Three distinct engines. <br className="hidden sm:inline" />
+            <span className="text-[#8a8f98]">Zero room for financial error.</span>
           </h2>
-
-          <p className="mt-4 text-base sm:text-lg text-[#8a8f98] max-w-xl text-balance">
-            Threat indicators shouldn’t be checked in silos. SENTINEL connects ingestion, network correlation, and banking verification into a unified defense pipeline.
+          <p className="text-sm sm:text-base text-[#8a8f98] max-w-2xl leading-relaxed font-normal">
+            Financial threats cannot be evaluated in silos. Sentinel combines deterministic ledger controls, relational graph intelligence, and real-time email defense into an impenetrable barrier.
           </p>
         </div>
 
-        {/* Linear Asymmetric Bento Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Card 1: ScamShield — DETECT (Span 7) */}
-          <div
-            id="scamshield"
-            className="lg:col-span-7 linear-card rounded-2xl p-8 flex flex-col justify-between group"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <span className="text-xs font-mono tracking-wider text-[#5ed6c0] font-semibold flex items-center gap-2">
-                  <Scan className="w-4 h-4" />
-                  SCAMSHIELD // DETECT
-                </span>
-                <span className="text-[11px] font-mono text-[#8a8f98] px-2 py-0.5 rounded border border-white/[0.08] bg-white/[0.02]">
-                  GEMINI MULTIMODAL
-                </span>
-              </div>
-
-              <h3 className="text-2xl font-medium text-[#f7f8f8] tracking-tight mb-3">
-                Evidence extraction without data loss
-              </h3>
-              <p className="text-sm text-[#8a8f98] leading-relaxed mb-6">
-                Upload raw PDF invoices, forwarded email threads, or screenshots. Gemini extracts structured organizations, accounts, IFSC routing codes, and analyzes psychological pressure cues and subtle typos.
-              </p>
+        {/* 3-Column Linear Benefit Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 border-y border-white/[0.08] divide-y md:divide-y-0 md:divide-x divide-white/[0.08] bg-[#08090a]">
+          
+          {/* FIG 0.1 — FinGuard Deterministic Core */}
+          <div className="group p-8 sm:p-10 flex flex-col justify-between min-h-[540px] hover:bg-white/[0.015] transition-colors relative">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[11px] text-[#8a8f98] opacity-40 uppercase tracking-widest">
+                Fig 0.1
+              </span>
+              <span className="font-mono text-[10px] text-[#8a8f98]/60 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
+                LEDGER CORE
+              </span>
             </div>
 
-            {/* Embedded Micro-UI: Extracted Entities Scanner */}
-            <div className="rounded-xl border border-white/[0.08] bg-[#08090a] p-4 space-y-3 font-mono text-xs">
-              <div className="flex items-center justify-between text-[11px] text-[#8a8f98] pb-2 border-b border-white/[0.06]">
-                <span>EXTRACTED ENTITY TELEMETRY</span>
-                <span className="text-[#5ed6c0]">CONFIDENCE: 98.4%</span>
+            {/* Illustration */}
+            <div className="flex-1 flex items-center justify-center my-6 py-4 overflow-hidden">
+              <div className="transition-transform duration-500 ease-out group-hover:scale-[1.02]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="265" height="262" fill="none" viewBox="0 0 265 262" style={{ ["--purpose-lift" as any]: "31.667px" }}><g className="GJ9TEa_purposeLift" style={{ ["--lift-delay" as any]: "0s" }}><path fill="#08090A" d="M250.355 179.668a3.43 3.43 0 0 1 1.895 3.067v16.302a3.43 3.43 0 0 1-1.895 3.067L136.85 258.855a10.29 10.29 0 0 1-9.2 0L14.145 202.103a3.43 3.43 0 0 1-1.895-3.067V182.735c0-1.299.734-2.486 1.895-3.067L129.183 122.149a6.86 6.86 0 0 1 6.134 0z"></path><path stroke="#D0D6E0" strokeWidth="0.5" d="M14.145 202.103a3.43 3.43 0 0 1-1.895-3.067V182.735c0-1.299.734-2.486 1.895-3.067L129.183 122.149a6.86 6.86 0 0 1 6.134 0L250.355 179.668a3.43 3.43 0 0 1 1.895 3.067v16.302a3.43 3.43 0 0 1-1.895 3.067"></path><path className="GJ9TEa_purposeEdge" stroke="#D0D6E0" strokeWidth="0.5" d="M250.355 202.103L136.85 258.855a10.29 10.29 0 0 1-9.2 0L14.145 202.103"></path><path stroke="#3E3E44" strokeLinecap="round" strokeWidth="0.5" d="m19.107 184.901 108.543 54.272a10.29 10.29 0 0 0 9.2 0l108.543-54.272"></path></g><g className="GJ9TEa_purposeLift" style={{ ["--lift-delay" as any]: "0s" }}><path fill="#08090A" d="M250.355 163.366a3.43 3.43 0 0 1 1.895 3.067v16.302a3.43 3.43 0 0 1-1.895 3.067L136.85 242.554a10.29 10.29 0 0 1-9.2 0L14.145 185.802a3.43 3.43 0 0 1-1.895-3.067V166.433c0-1.299.734-2.486 1.895-3.067L129.183 105.847a6.86 6.86 0 0 1 6.134 0z"></path><path stroke="#D0D6E0" strokeWidth="0.5" d="M14.145 185.802a3.43 3.43 0 0 1-1.895-3.067V166.433c0-1.299.734-2.486 1.895-3.067L129.183 105.847a6.86 6.86 0 0 1 6.134 0L250.355 163.366a3.43 3.43 0 0 1 1.895 3.067v16.302a3.43 3.43 0 0 1-1.895 3.067"></path><path className="GJ9TEa_purposeEdge" stroke="#3E3E44" strokeWidth="0.5" d="M250.355 185.802L136.85 242.554a10.29 10.29 0 0 1-9.2 0L14.145 185.802"></path><path stroke="#3E3E44" strokeLinecap="round" strokeWidth="0.5" d="m19.107 168.599 108.543 54.272a10.29 10.29 0 0 0 9.2 0l108.543-54.272"></path></g><g className="GJ9TEa_purposeLift" style={{ ["--lift-delay" as any]: "0s" }}><path fill="#08090A" d="M250.355 147.065a3.43 3.43 0 0 1 1.895 3.067v16.302a3.43 3.43 0 0 1-1.895 3.067L136.85 226.252a10.29 10.29 0 0 1-9.2 0L14.145 169.5a3.43 3.43 0 0 1-1.895-3.067V150.132c0-1.299.734-2.486 1.895-3.067L129.183 89.546a6.86 6.86 0 0 1 6.134 0z"></path><path stroke="#D0D6E0" strokeWidth="0.5" d="M14.145 169.5a3.43 3.43 0 0 1-1.895-3.067V150.132c0-1.299.734-2.486 1.895-3.067L129.183 89.546a6.86 6.86 0 0 1 6.134 0L250.355 147.065a3.43 3.43 0 0 1 1.895 3.067v16.302a3.43 3.43 0 0 1-1.895 3.067"></path><path className="GJ9TEa_purposeEdge" stroke="#3E3E44" strokeWidth="0.5" d="M250.355 169.5L136.85 226.252a10.29 10.29 0 0 1-9.2 0L14.145 169.5"></path><path stroke="#3E3E44" strokeLinecap="round" strokeWidth="0.5" d="m19.107 152.298 108.543 54.272a10.29 10.29 0 0 0 9.2 0l108.543-54.272"></path></g><g className="GJ9TEa_purposeLift" style={{ ["--lift-delay" as any]: "0s" }}><path fill="#08090A" d="M250.355 130.763a3.43 3.43 0 0 1 1.895 3.067v16.302a3.43 3.43 0 0 1-1.895 3.067L136.85 209.951a10.29 10.29 0 0 1-9.2 0L14.145 153.199a3.43 3.43 0 0 1-1.895-3.067V133.83c0-1.299.734-2.486 1.895-3.067L129.183 73.244a6.86 6.86 0 0 1 6.134 0z"></path><path stroke="#D0D6E0" strokeWidth="0.5" d="M14.145 153.199a3.43 3.43 0 0 1-1.895-3.067V133.83c0-1.299.734-2.486 1.895-3.067L129.183 73.244a6.86 6.86 0 0 1 6.134 0L250.355 130.763a3.43 3.43 0 0 1 1.895 3.067v16.302a3.43 3.43 0 0 1-1.895 3.067"></path><path className="GJ9TEa_purposeEdge" stroke="#3E3E44" strokeWidth="0.5" d="M250.355 153.199L136.85 209.951a10.29 10.29 0 0 1-9.2 0L14.145 153.199"></path><path stroke="#3E3E44" strokeLinecap="round" strokeWidth="0.5" d="m19.107 135.996 108.543 54.272a10.29 10.29 0 0 0 9.2 0l108.543-54.272"></path></g><g className="GJ9TEa_purposeLift" style={{ ["--lift-delay" as any]: "0s" }}><path fill="#08090A" d="M250.355 114.462a3.43 3.43 0 0 1 1.895 3.067v16.302a3.43 3.43 0 0 1-1.895 3.067L136.85 193.649a10.29 10.29 0 0 1-9.2 0L14.145 136.897a3.43 3.43 0 0 1-1.895-3.067V117.529c0-1.299.734-2.486 1.895-3.067L129.183 56.943a6.86 6.86 0 0 1 6.134 0z"></path><path stroke="#D0D6E0" strokeWidth="0.5" d="M14.145 136.897a3.43 3.43 0 0 1-1.895-3.067V117.529c0-1.299.734-2.486 1.895-3.067L129.183 56.943a6.86 6.86 0 0 1 6.134 0L250.355 114.462a3.43 3.43 0 0 1 1.895 3.067v16.302a3.43 3.43 0 0 1-1.895 3.067"></path><path className="GJ9TEa_purposeEdge" stroke="#3E3E44" strokeWidth="0.5" d="M250.355 136.897L136.85 193.649a10.29 10.29 0 0 1-9.2 0L14.145 136.897"></path><path stroke="#3E3E44" strokeLinecap="round" strokeWidth="0.5" d="m19.107 119.695 108.543 54.272a10.29 10.29 0 0 0 9.2 0l108.543-54.272"></path></g><path fill="#08090A" filter="url(#filter0_d_3072_54146)" d="M250.355 66.493a3.43 3.43 0 0 1 1.895 3.067v16.302a3.43 3.43 0 0 1-1.895 3.067L136.85 145.681a10.29 10.29 0 0 1-9.2 0L14.145 88.929a3.43 3.43 0 0 1-1.895-3.067V69.56c0-1.299.734-2.486 1.895-3.067L129.183 8.974a6.86 6.86 0 0 1 6.134 0z"></path><path fill="#08090A" d="M250.355 66.493a3.43 3.43 0 0 1 1.895 3.067v16.302a3.43 3.43 0 0 1-1.895 3.067L136.85 145.681a10.29 10.29 0 0 1-9.2 0L14.145 88.929a3.43 3.43 0 0 1-1.895-3.067V69.56c0-1.299.734-2.486 1.895-3.067L129.183 8.974a6.86 6.86 0 0 1 6.134 0z"></path><path stroke="#D0D6E0" strokeWidth="0.5" d="M14.145 88.929a3.43 3.43 0 0 1-1.895-3.067V69.56c0-1.299.734-2.486 1.895-3.067L129.183 8.974a6.86 6.86 0 0 1 6.134 0L250.355 66.493a3.43 3.43 0 0 1 1.895 3.067v16.302a3.43 3.43 0 0 1-1.895 3.067"></path><path stroke="#D0D6E0" strokeWidth="0.5" d="M250.355 88.929L136.85 145.681a10.29 10.29 0 0 1-9.2 0L14.145 88.929"></path><path stroke="#3E3E44" strokeLinecap="round" strokeWidth="0.5" d="m19.107 71.726 108.543 54.272a10.29 10.29 0 0 0 9.2 0l108.543-54.272"></path><path stroke="#3E3E44" strokeWidth="0.5" d="M103.378 91.627c-.908-.281-.495-.95.573-.95h56.598c1.068 0 1.48.669.573.95-17.631 5.466-40.113 5.466-57.744 0m-12.29-5.197c.205.117.502.183.813.183h80.697c.311 0 .608-.066.814-.182a42 42 0 0 0 4.679-3.057c.47-.357-.052-.824-.907-.824H87.316c-.856 0-1.378.467-.907.824a42 42 0 0 0 4.679 3.057Zm-10.056-8.29c.16.21.564.346 1.013.346h100.409c.449 0 .853-.136 1.014-.346q1.152-1.502 1.939-3.05c.173-.34-.349-.667-1.052-.667H80.145c-.704 0-1.226.327-1.052.668a19.7 19.7 0 0 0 1.938 3.05Zm-2.468-7.78c-.574 0-1.052-.222-1.084-.508-.849-7.528 4.478-15.198 15.98-20.95 21.423-10.71 56.157-10.71 77.58 0 11.502 5.752 16.828 13.422 15.979 20.95-.032.286-.51.507-1.084.507z"></path><g mask="url(#purposeGapMask_R_167qt9j6l5a_)"><path stroke="#3E3E44" strokeDasharray="1 3" strokeLinecap="round" d="M12.679 69.56V199.036M251.821 69.56V199.036M132.25 129.379V258.855"></path></g><g className="GJ9TEa_purposeHitArea"><path strokeWidth="14.574" d="m19.107 127.845 108.543 54.272a10.29 10.29 0 0 0 9.2 0l108.543-54.272"></path><path strokeWidth="14.574" d="m19.107 144.147 108.543 54.272a10.29 10.29 0 0 0 9.2 0l108.543-54.272"></path><path strokeWidth="14.574" d="m19.107 160.448 108.543 54.272a10.29 10.29 0 0 0 9.2 0l108.543-54.272"></path><path strokeWidth="14.574" d="m19.107 176.75 108.543 54.272a10.29 10.29 0 0 0 9.2 0l108.543-54.272"></path><path strokeWidth="14.574" d="m19.107 193.051 108.543 54.272a10.29 10.29 0 0 0 9.2 0l108.543-54.272"></path></g><defs><mask id="purposeGapMask_R_167qt9j6l5a_" maskUnits="userSpaceOnUse" x="0" y="0" width="265" height="262"><rect width="265" height="262" fill="#fff"></rect><path fill="#000" d="M252.25 63.8L250.355 66.867L136.85 123.619a10.29 10.29 0 0 1-9.2 0L14.145 66.867L12.25 63.8V91.622L14.145 94.689L127.65 151.441a10.29 10.29 0 0 0 9.2 0L250.355 94.689L252.25 91.622Z"></path><g className="GJ9TEa_purposeLift" style={{ ["--lift-delay" as any]: "0s" }}><path fill="#000" d="M252.25 176.975L250.355 180.042L136.85 236.794a10.29 10.29 0 0 1-9.2 0L14.145 180.042L12.25 176.975V204.796L14.145 207.864L127.65 264.616a10.29 10.29 0 0 0 9.2 0L250.355 207.864L252.25 204.796Z"></path></g><g className="GJ9TEa_purposeLift" style={{ ["--lift-delay" as any]: "0s" }}><path fill="#000" d="M252.25 160.673L250.355 163.74L136.85 220.492a10.29 10.29 0 0 1-9.2 0L14.145 163.74L12.25 160.673V188.495L14.145 191.562L127.65 248.313a10.29 10.29 0 0 0 9.2 0L250.355 191.562L252.25 188.495Z"></path></g><g className="GJ9TEa_purposeLift" style={{ ["--lift-delay" as any]: "0s" }}><path fill="#000" d="M252.25 144.372L250.355 147.439L136.85 204.191a10.29 10.29 0 0 1-9.2 0L14.145 147.439L12.25 144.372V172.194L14.145 175.26L127.65 232.013a10.29 10.29 0 0 0 9.2 0L250.355 175.26L252.25 172.194Z"></path></g><g className="GJ9TEa_purposeLift" style={{ ["--lift-delay" as any]: "0s" }}><path fill="#000" d="M252.25 128.07L250.355 131.137L136.85 187.889a10.29 10.29 0 0 1-9.2 0L14.145 131.137L12.25 128.07V155.892L14.145 158.959L127.65 215.711a10.29 10.29 0 0 0 9.2 0L250.355 158.959L252.25 155.892Z"></path></g><g className="GJ9TEa_purposeLift" style={{ ["--lift-delay" as any]: "0s" }}><path fill="#000" d="M252.25 111.769L250.355 114.836L136.85 171.588a10.29 10.29 0 0 1-9.2 0L14.145 114.836L12.25 111.769V139.591L14.145 142.658L127.65 199.409a10.29 10.29 0 0 0 9.2 0L250.355 142.658L252.25 139.591Z"></path></g></mask><filter id="filter0_d_3072_54146" width="264.5" height="156.191" x="0" y="0" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse"><feFlood floodOpacity="0" result="BackgroundImageFix"></feFlood><feColorMatrix in="SourceAlpha" result="hardAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"></feColorMatrix><feOffset dy="4"></feOffset><feGaussianBlur stdDeviation="6"></feGaussianBlur><feComposite in2="hardAlpha" operator="out"></feComposite><feColorMatrix values="0 0 0 0 0.0313726 0 0 0 0 0.0352941 0 0 0 0 0.0392157 0 0 0 0.6 0"></feColorMatrix><feBlend in2="BackgroundImageFix" result="effect1_dropShadow_3072_54146"></feBlend></filter></defs></svg>
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.06]">
-                  <span className="text-[#62666d] block text-[10px]">PAYEE SENDER</span>
-                  <span className="text-[#f7f8f8] font-medium">invoice@asterion-supplies-billing.com</span>
-                </div>
-                <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.06]">
-                  <span className="text-[#62666d] block text-[10px]">EXTRACTED BANK</span>
-                  <span className="text-[#eb5757] font-medium">ACC: 9999 8888 7777</span>
-                </div>
-                <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.06]">
-                  <span className="text-[#62666d] block text-[10px]">IFSC ROUTING</span>
-                  <span className="text-[#eb5757] font-medium">DEMO0002222 (New)</span>
-                </div>
-                <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.06]">
-                  <span className="text-[#62666d] block text-[10px]">INVOICE TOTAL</span>
-                  <span className="text-[#f7f8f8] font-medium">$485,000.00 USD</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 pt-1 text-[11px] text-[#f0b96d]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#f0b96d]" />
-                <span>Detected high urgency phrasing (&quot;Immediate settlement required to release shipments&quot;)</span>
-              </div>
+            {/* Footer */}
+            <div className="space-y-2 pt-4">
+              <h3 className="text-[15px] font-medium text-[#f7f8f8] tracking-tight">
+                Deterministic FinGuard
+              </h3>
+              <p className="text-xs sm:text-[13px] text-[#8a8f98] leading-relaxed font-normal">
+                Programmatic ledger and IFSC comparison with zero LLM math. If routing or beneficiary digits mismatch by even one character, disbursement is halted.
+              </p>
             </div>
           </div>
 
-          {/* Card 2: TrustGraph — INVESTIGATE (Span 5) */}
-          <div
-            id="trustgraph"
-            className="lg:col-span-5 linear-card rounded-2xl p-8 flex flex-col justify-between group"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <span className="text-xs font-mono tracking-wider text-[#5e6ad2] font-semibold flex items-center gap-2">
-                  <Network className="w-4 h-4" />
-                  TRUSTGRAPH // INVESTIGATE
-                </span>
-                <span className="text-[11px] font-mono text-[#5e6ad2] px-2 py-0.5 rounded border border-[#5e6ad2]/20 bg-[#5e6ad2]/10">
-                  PROVENANCE GRAPH
-                </span>
-              </div>
-
-              <h3 className="text-2xl font-medium text-[#f7f8f8] tracking-tight mb-3">
-                Uncover hidden relationships
-              </h3>
-              <p className="text-sm text-[#8a8f98] leading-relaxed mb-6">
-                Isolated identifiers become investigative leads. TrustGraph matches normalized entities against historical records with strict provenance—no LLM hallucinations.
-              </p>
+          {/* FIG 0.2 — Relational TrustGraph */}
+          <div className="group p-8 sm:p-10 flex flex-col justify-between min-h-[540px] hover:bg-white/[0.015] transition-colors relative">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[11px] text-[#8a8f98] opacity-40 uppercase tracking-widest">
+                Fig 0.2
+              </span>
+              <span className="font-mono text-[10px] text-[#8a8f98]/60 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
+                GRAPH MESH
+              </span>
             </div>
 
-            {/* Embedded Micro-UI: Interactive Node Link Visual */}
-            <div className="rounded-xl border border-white/[0.08] bg-[#08090a] p-4 font-mono text-xs space-y-3">
-              <div className="text-[11px] text-[#8a8f98] pb-2 border-b border-white/[0.06]">
-                HISTORICAL CORRELATIONS (2 MATCHES)
+            {/* Illustration */}
+            <div className="flex-1 flex items-center justify-center my-6 py-4 overflow-hidden">
+              <div className="transition-transform duration-500 ease-out group-hover:scale-[1.02]">
+                <div className="_3fVNxW_agentsWrapper"><svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" className="_3fVNxW_gridLoader" fill="none"><circle className="grid-dot-0-0-upDown" cx="1" cy="1" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-0-1-upDown" cx="4.5" cy="1" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-0-2-upDown" cx="8" cy="1" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-0-3-upDown" cx="11.5" cy="1" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-0-4-upDown" cx="15" cy="1" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-1-0-upDown" cx="1" cy="4.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-1-1-upDown" cx="4.5" cy="4.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-1-2-upDown" cx="8" cy="4.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-1-3-upDown" cx="11.5" cy="4.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-1-4-upDown" cx="15" cy="4.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-2-0-upDown" cx="1" cy="8" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-2-1-upDown" cx="4.5" cy="8" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-2-2-upDown" cx="8" cy="8" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-2-3-upDown" cx="11.5" cy="8" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-2-4-upDown" cx="15" cy="8" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-3-0-upDown" cx="1" cy="11.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-3-1-upDown" cx="4.5" cy="11.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-3-2-upDown" cx="8" cy="11.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-3-3-upDown" cx="11.5" cy="11.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-3-4-upDown" cx="15" cy="11.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-4-0-upDown" cx="1" cy="15" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-4-1-upDown" cx="4.5" cy="15" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-4-2-upDown" cx="8" cy="15" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-4-3-upDown" cx="11.5" cy="15" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-4-4-upDown" cx="15" cy="15" r="1" fill="#e4e5e9" opacity="0.3"></circle></svg><svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" className="_3fVNxW_gridLoader _3fVNxW_gridLoaderPong" fill="none"><circle className="grid-dot-0-0-pong" cx="1" cy="1" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-0-1-pong" cx="4.5" cy="1" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-0-2-pong" cx="8" cy="1" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-0-3-pong" cx="11.5" cy="1" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-0-4-pong" cx="15" cy="1" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-1-0-pong" cx="1" cy="4.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-1-1-pong" cx="4.5" cy="4.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-1-2-pong" cx="8" cy="4.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-1-3-pong" cx="11.5" cy="4.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-1-4-pong" cx="15" cy="4.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-2-0-pong" cx="1" cy="8" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-2-1-pong" cx="4.5" cy="8" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-2-2-pong" cx="8" cy="8" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-2-3-pong" cx="11.5" cy="8" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-2-4-pong" cx="15" cy="8" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-3-0-pong" cx="1" cy="11.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-3-1-pong" cx="4.5" cy="11.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-3-2-pong" cx="8" cy="11.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-3-3-pong" cx="11.5" cy="11.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-3-4-pong" cx="15" cy="11.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-4-0-pong" cx="1" cy="15" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-4-1-pong" cx="4.5" cy="15" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-4-2-pong" cx="8" cy="15" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-4-3-pong" cx="11.5" cy="15" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-4-4-pong" cx="15" cy="15" r="1" fill="#e4e5e9" opacity="0.3"></circle></svg><svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" className="_3fVNxW_gridLoader _3fVNxW_gridLoaderAgent" fill="none"><circle className="grid-dot-0-0-agent" cx="1" cy="1" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-0-1-agent" cx="4.5" cy="1" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-0-2-agent" cx="8" cy="1" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-0-3-agent" cx="11.5" cy="1" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-0-4-agent" cx="15" cy="1" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-1-0-agent" cx="1" cy="4.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-1-1-agent" cx="4.5" cy="4.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-1-2-agent" cx="8" cy="4.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-1-3-agent" cx="11.5" cy="4.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-1-4-agent" cx="15" cy="4.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-2-0-agent" cx="1" cy="8" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-2-1-agent" cx="4.5" cy="8" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-2-2-agent" cx="8" cy="8" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-2-3-agent" cx="11.5" cy="8" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-2-4-agent" cx="15" cy="8" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-3-0-agent" cx="1" cy="11.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-3-1-agent" cx="4.5" cy="11.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-3-2-agent" cx="8" cy="11.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-3-3-agent" cx="11.5" cy="11.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-3-4-agent" cx="15" cy="11.5" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-4-0-agent" cx="1" cy="15" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-4-1-agent" cx="4.5" cy="15" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-4-2-agent" cx="8" cy="15" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-4-3-agent" cx="11.5" cy="15" r="1" fill="#e4e5e9" opacity="0.3"></circle><circle className="grid-dot-4-4-agent" cx="15" cy="15" r="1" fill="#e4e5e9" opacity="0.3"></circle></svg><svg xmlns="http://www.w3.org/2000/svg" width="304" height="281" fill="none" viewBox="0 0 304 281"><path fill="#08090A" stroke="#D0D6E0" strokeWidth="0.5" d="M148.534 1.068a7.75 7.75 0 0 1 6.932 0l50.211 25.106a3.75 3.75 0 0 1 2.073 3.354v125.056c0 1.42-.803 2.718-2.073 3.354l-50.211 25.105a7.75 7.75 0 0 1-6.932 0l-50.21-25.105a3.75 3.75 0 0 1-2.074-3.354V29.528a3.75 3.75 0 0 1 2.073-3.354z"></path><path stroke="#2E2E32" strokeLinecap="round" strokeWidth="0.5" d="m102 30.056 46.422 23.21a8 8 0 0 0 7.156 0L202 30.057"></path><path fill="#08090A" filter="url(#filter0_d_3357_5865)" d="M84.534 139.068a7.76 7.76 0 0 1 6.932 0l50.211 25.106a3.75 3.75 0 0 1 2.073 3.353v19.057c0 1.42-.803 2.718-2.073 3.354l-50.211 25.105a7.75 7.75 0 0 1-6.932 0l-50.21-25.105a3.75 3.75 0 0 1-2.074-3.354v-19.057a3.75 3.75 0 0 1 2.073-3.353z"></path><g strokeWidth="0.5"><path fill="#08090A" stroke="#3E3E44" d="M84.534 139.068a7.76 7.76 0 0 1 6.932 0l50.211 25.106a3.75 3.75 0 0 1 2.073 3.353v19.057c0 1.42-.803 2.718-2.073 3.354l-50.211 25.105a7.75 7.75 0 0 1-6.932 0l-50.21-25.105a3.75 3.75 0 0 1-2.074-3.354v-19.057a3.75 3.75 0 0 1 2.073-3.353z"></path><path stroke="#2E2E32" strokeLinecap="round" d="m38 168.056 46.422 23.211a8 8 0 0 0 7.156 0L138 168.056"></path></g><path fill="#08090A" filter="url(#filter1_d_3357_5865)" d="M84.534 53.069a7.75 7.75 0 0 1 6.932 0l50.211 25.105a3.75 3.75 0 0 1 2.073 3.353v73.057c0 1.42-.803 2.718-2.073 3.354l-50.211 25.105a7.75 7.75 0 0 1-6.932 0l-50.21-25.105a3.75 3.75 0 0 1-2.074-3.354V81.528a3.75 3.75 0 0 1 2.073-3.354z"></path><g name="outer-left"><path fill="#08090A" stroke="#D0D6E0" strokeWidth="0.5" d="M84.534 53.069a7.75 7.75 0 0 1 6.932 0l50.211 25.105a3.75 3.75 0 0 1 2.073 3.353v73.057c0 1.42-.803 2.718-2.073 3.354l-50.211 25.105a7.75 7.75 0 0 1-6.932 0l-50.21-25.105a3.75 3.75 0 0 1-2.074-3.354V81.528a3.75 3.75 0 0 1 2.073-3.354z"></path><path stroke="#2E2E32" strokeLinecap="round" strokeWidth="0.5" d="m38 82.056 46.422 23.211a8 8 0 0 0 7.156 0L138 82.056"></path></g><path fill="#08090A" filter="url(#filter2_d_3357_5865)" d="M212.534 97.069a7.75 7.75 0 0 1 6.932 0l50.211 25.105a3.75 3.75 0 0 1 2.073 3.353v61.057c0 1.42-.803 2.718-2.073 3.354l-50.211 25.105a7.75 7.75 0 0 1-6.932 0l-50.211-25.105a3.75 3.75 0 0 1-2.073-3.354v-61.057a3.75 3.75 0 0 1 2.073-3.353z"></path><g strokeWidth="0.5"><path fill="#08090A" stroke="#D0D6E0" d="M212.534 97.069a7.75 7.75 0 0 1 6.932 0l50.211 25.105a3.75 3.75 0 0 1 2.073 3.353v61.057c0 1.42-.803 2.718-2.073 3.354l-50.211 25.105a7.75 7.75 0 0 1-6.932 0l-50.211-25.105a3.75 3.75 0 0 1-2.073-3.354v-61.057a3.75 3.75 0 0 1 2.073-3.353z"></path><path stroke="#2E2E32" strokeLinecap="round" d="m166 126.056 46.422 23.211a8 8 0 0 0 7.156 0L266 126.056"></path></g><path fill="#08090A" filter="url(#filter3_d_3357_5865)" d="M212.534 64.069a7.75 7.75 0 0 1 6.932 0l50.211 25.105a3.75 3.75 0 0 1 2.073 3.353v19.057c0 1.42-.803 2.718-2.073 3.354l-50.211 25.105a7.75 7.75 0 0 1-6.932 0l-50.211-25.105a3.75 3.75 0 0 1-2.073-3.354V92.528a3.75 3.75 0 0 1 2.073-3.354z"></path><g strokeWidth="0.5" name="outer-right"><path fill="#08090A" stroke="#3E3E44" d="M212.534 64.069a7.75 7.75 0 0 1 6.932 0l50.211 25.105a3.75 3.75 0 0 1 2.073 3.353v19.057c0 1.42-.803 2.718-2.073 3.354l-50.211 25.105a7.75 7.75 0 0 1-6.932 0l-50.211-25.105a3.75 3.75 0 0 1-2.073-3.354V92.528a3.75 3.75 0 0 1 2.073-3.354z"></path><path stroke="#2E2E32" strokeLinecap="round" d="m166 93.056 46.422 23.211a8 8 0 0 0 7.156 0L266 93.056"></path></g><path fill="#08090A" filter="url(#filter4_d_3357_5865)" d="M148.534 145.068a7.76 7.76 0 0 1 6.932 0l50.211 25.106a3.75 3.75 0 0 1 2.073 3.353v45.057c0 1.42-.803 2.718-2.073 3.354l-50.211 25.105a7.75 7.75 0 0 1-6.932 0l-50.21-25.105a3.75 3.75 0 0 1-2.074-3.354v-45.057a3.75 3.75 0 0 1 2.073-3.353z"></path><g><path fill="#08090A" stroke="#D0D6E0" strokeWidth="0.5" d="M148.534 145.068a7.76 7.76 0 0 1 6.932 0l50.211 25.106a3.75 3.75 0 0 1 2.073 3.353v45.057c0 1.42-.803 2.718-2.073 3.354l-50.211 25.105a7.75 7.75 0 0 1-6.932 0l-50.21-25.105a3.75 3.75 0 0 1-2.074-3.354v-45.057a3.75 3.75 0 0 1 2.073-3.353z"></path><path stroke="#2E2E32" strokeLinecap="round" strokeWidth="0.5" d="m102 174.056 46.422 23.211a8 8 0 0 0 7.156 0L202 174.056"></path></g><defs><filter id="filter0_d_3357_5865" width="176" height="144" x="0" y="105.056" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse"><feFlood floodOpacity="0" result="BackgroundImageFix"></feFlood><feColorMatrix in="SourceAlpha" result="hardAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"></feColorMatrix><feOffset></feOffset><feGaussianBlur stdDeviation="16"></feGaussianBlur><feComposite in2="hardAlpha" operator="out"></feComposite><feColorMatrix values="0 0 0 0 0.0313726 0 0 0 0 0.0352941 0 0 0 0 0.0392157 0 0 0 1 0"></feColorMatrix><feBlend in2="BackgroundImageFix" result="effect1_dropShadow_3357_5865"></feBlend></filter><filter id="filter1_d_3357_5865" width="176" height="198" x="0" y="19.056" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse"><feFlood floodOpacity="0" result="BackgroundImageFix"></feFlood><feColorMatrix in="SourceAlpha" result="hardAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"></feColorMatrix><feOffset></feOffset><feGaussianBlur stdDeviation="16"></feGaussianBlur><feComposite in2="hardAlpha" operator="out"></feComposite><feColorMatrix values="0 0 0 0 0.0313726 0 0 0 0 0.0352941 0 0 0 0 0.0392157 0 0 0 1 0"></feColorMatrix><feBlend in2="BackgroundImageFix" result="effect1_dropShadow_3357_5865"></feBlend></filter><filter id="filter2_d_3357_5865" width="176" height="210" x="128" y="39.056" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse"><feFlood floodOpacity="0" result="BackgroundImageFix"></feFlood><feColorMatrix in="SourceAlpha" result="hardAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"></feColorMatrix><feOffset></feOffset><feGaussianBlur stdDeviation="16"></feGaussianBlur><feComposite in2="hardAlpha" operator="out"></feComposite><feColorMatrix values="0 0 0 0 0.0313726 0 0 0 0 0.0352941 0 0 0 0 0.0392157 0 0 0 1 0"></feColorMatrix><feBlend in2="BackgroundImageFix" result="effect1_dropShadow_3357_5865"></feBlend></filter><filter id="filter3_d_3357_5865" width="176" height="144" x="128" y="30.056" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse"><feFlood floodOpacity="0" result="BackgroundImageFix"></feFlood><feColorMatrix in="SourceAlpha" result="hardAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"></feColorMatrix><feOffset></feOffset><feGaussianBlur stdDeviation="16"></feGaussianBlur><feComposite in2="hardAlpha" operator="out"></feComposite><feColorMatrix values="0 0 0 0 0.0313726 0 0 0 0 0.0352941 0 0 0 0 0.0392157 0 0 0 1 0"></feColorMatrix><feBlend in2="BackgroundImageFix" result="effect1_dropShadow_3357_5865"></feBlend></filter><filter id="filter4_d_3357_5865" width="176" height="170" x="64" y="111.056" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse"><feFlood floodOpacity="0" result="BackgroundImageFix"></feFlood><feColorMatrix in="SourceAlpha" result="hardAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"></feColorMatrix><feOffset></feOffset><feGaussianBlur stdDeviation="16"></feGaussianBlur><feComposite in2="hardAlpha" operator="out"></feComposite><feColorMatrix values="0 0 0 0 0.0313726 0 0 0 0 0.0352941 0 0 0 0 0.0392157 0 0 0 1 0"></feColorMatrix><feBlend in2="BackgroundImageFix" result="effect1_dropShadow_3357_5865"></feBlend></filter></defs></svg></div>
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <div className="p-2.5 rounded bg-white/[0.02] border border-[#f0b96d]/20 flex items-center justify-between text-[11px]">
-                  <div>
-                    <span className="text-[#f0b96d] font-medium block">DOMAIN CORRELATION</span>
-                    <span className="text-[#d0d3d8]">asterion-supplies-billing.com</span>
-                  </div>
-                  <span className="text-[#f0b96d] text-[10px] px-1.5 py-0.5 rounded bg-[#f0b96d]/15">
-                    INCIDENT #104
-                  </span>
-                </div>
-
-                <div className="p-2.5 rounded bg-white/[0.02] border border-[#f0b96d]/20 flex items-center justify-between text-[11px]">
-                  <div>
-                    <span className="text-[#f0b96d] font-medium block">PHONE REUSE</span>
-                    <span className="text-[#d0d3d8]">+91 98765 43210</span>
-                  </div>
-                  <span className="text-[#f0b96d] text-[10px] px-1.5 py-0.5 rounded bg-[#f0b96d]/15">
-                    INCIDENT #089
-                  </span>
-                </div>
-              </div>
-
-              <div className="text-[10px] text-[#62666d] pt-1">
-                Every edge cites supporting document IDs and observation timestamps.
-              </div>
+            {/* Footer */}
+            <div className="space-y-2 pt-4">
+              <h3 className="text-[15px] font-medium text-[#f7f8f8] tracking-tight">
+                Relational TrustGraph
+              </h3>
+              <p className="text-xs sm:text-[13px] text-[#8a8f98] leading-relaxed font-normal">
+                Cross-incident entity correlation. Uncovers hidden mule networks, shared banking hashes, and domain syndicates across historical fraud dockets.
+              </p>
             </div>
           </div>
 
-          {/* Card 3: FinGuard — PROTECT (Span 12) */}
-          <div
-            id="finguard"
-            className="lg:col-span-12 linear-card rounded-2xl p-8 md:p-10 flex flex-col lg:flex-row items-center justify-between gap-8 group"
-          >
-            <div className="max-w-xl">
-              <div className="inline-flex items-center gap-2 text-xs font-mono tracking-wider text-[#4ebe82] font-semibold mb-4">
-                <ShieldCheck className="w-4 h-4" />
-                <span>FINGUARD // PROTECT</span>
-              </div>
+          {/* FIG 0.3 — Zero-Latency Interception */}
+          <div className="group p-8 sm:p-10 flex flex-col justify-between min-h-[540px] hover:bg-white/[0.015] transition-colors relative">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[11px] text-[#8a8f98] opacity-40 uppercase tracking-widest">
+                Fig 0.3
+              </span>
+              <span className="font-mono text-[10px] text-[#8a8f98]/60 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
+                SUB-SECOND
+              </span>
+            </div>
 
-              <h3 className="text-2xl sm:text-3xl font-medium text-[#f7f8f8] tracking-tight mb-4">
-                Zero-hallucination payment protection
-              </h3>
-              <p className="text-sm text-[#8a8f98] leading-relaxed mb-6">
-                AI extracts the data, but deterministic Python algorithms verify the money. FinGuard compares extracted payee bank accounts and IFSC codes against your trusted supplier registry with 100% mathematical precision.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-[#8a8f98]">
-                <div className="flex items-center gap-2">
-                  <Check className="w-3.5 h-3.5 text-[#4ebe82]" />
-                  <span>Exact String Matching</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-3.5 h-3.5 text-[#4ebe82]" />
-                  <span>Duplicate Invoice Detection</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-3.5 h-3.5 text-[#4ebe82]" />
-                  <span>Zero LLM Routing Equality</span>
-                </div>
+            {/* Illustration */}
+            <div className="flex-1 flex items-center justify-center my-6 py-4 overflow-hidden">
+              <div className="transition-transform duration-500 ease-out group-hover:scale-[1.02]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="272" height="267" fill="none" viewBox="0 0 272 267" overflow="visible" className="GJ9TEa_momentum"><g strokeWidth="0.5"><path fill="#08090A" stroke="#62666D" d="M137.044 107.668a1.44 1.44 0 0 1 1.288 0l115.686 57.843a3.13 3.13 0 0 1 1.73 2.8v20.529a1.44 1.44 0 0 1-.796 1.288l-1.69.845a1.44 1.44 0 0 1-1.288 0l-115.686-57.843a3.13 3.13 0 0 1-1.73-2.8v-20.529c0-.545.308-1.044.796-1.288z"></path><path stroke="#2E2E32" strokeLinecap="round" d="M137.68900000000002 110.44600000000001l113.061 56.531a3.38 3.38 0 0 1 1.868 3.023v18.193"></path></g><g strokeWidth="0.5"><path fill="#08090A" stroke="#62666D" d="M128.594 98.37799999999999a1.44 1.44 0 0 1 1.288 0l115.686 57.843a3.13 3.13 0 0 1 1.73 2.8v34.049a1.44 1.44 0 0 1-.796 1.288l-1.69.845a1.44 1.44 0 0 1-1.288 0l-115.686-57.843a3.13 3.13 0 0 1-1.73-2.8v-34.049c0-.545.308-1.044.796-1.288z"></path><path stroke="#2E2E32" strokeLinecap="round" d="M129.239 101.15599999999999l113.061 56.531a3.38 3.38 0 0 1 1.868 3.023v31.713"></path></g><g strokeWidth="0.5"><path fill="#08090A" stroke="#62666D" d="M120.144 82.31599999999999a1.44 1.44 0 0 1 1.288 0l115.686 57.843a3.13 3.13 0 0 1 1.73 2.8v54.331a1.44 1.44 0 0 1-.796 1.288l-1.69.845a1.44 1.44 0 0 1-1.288 0l-115.686-57.843a3.13 3.13 0 0 1-1.73-2.8v-54.331c0-.545.308-1.044.796-1.288z"></path><path stroke="#2E2E32" strokeLinecap="round" d="M120.789 85.094l113.061 56.531a3.38 3.38 0 0 1 1.868 3.023v51.995000000000005"></path></g><g strokeWidth="0.5"><path fill="#08090A" stroke="#62666D" d="M111.69400000000002 59.504000000000005a1.44 1.44 0 0 1 1.288 0l115.686 57.843a3.13 3.13 0 0 1 1.73 2.8v81.373a1.44 1.44 0 0 1-.796 1.288l-1.69.845a1.44 1.44 0 0 1-1.288 0l-115.686-57.843a3.13 3.13 0 0 1-1.73-2.8v-81.373c0-.545.308-1.044.796-1.288z"></path><path stroke="#2E2E32" strokeLinecap="round" d="M112.33900000000001 62.282000000000004l113.061 56.531a3.38 3.38 0 0 1 1.868 3.023v79.037"></path></g><g strokeWidth="0.5"><path fill="#08090A" stroke="#62666D" d="M103.244 16.400000000000006a1.44 1.44 0 0 1 1.288 0l115.686 57.843a3.13 3.13 0 0 1 1.73 2.8v128.697a1.44 1.44 0 0 1-.796 1.288l-1.69.845a1.44 1.44 0 0 1-1.288 0l-115.686-57.843a3.13 3.13 0 0 1-1.73-2.8v-128.697c0-.545.308-1.044.796-1.288z"></path><path stroke="#2E2E32" strokeLinecap="round" d="M103.889 19.178000000000004l113.061 56.531a3.38 3.38 0 0 1 1.868 3.023v126.361"></path></g><g strokeWidth="0.5"><path fill="#08090A" stroke="#62666D" d="M94.79400000000001 67.954a1.44 1.44 0 0 1 1.288 0l115.686 57.843a3.13 3.13 0 0 1 1.73 2.8v81.373a1.44 1.44 0 0 1-.796 1.288l-1.69.845a1.44 1.44 0 0 1-1.288 0l-115.686-57.843a3.13 3.13 0 0 1-1.73-2.8v-81.373c0-.545.308-1.044.796-1.288z"></path><path stroke="#2E2E32" strokeLinecap="round" d="M95.43900000000001 70.732l113.061 56.531a3.38 3.38 0 0 1 1.868 3.023v79.037"></path></g><g strokeWidth="0.5"><path fill="#08090A" stroke="#62666D" d="M86.344 99.216a1.44 1.44 0 0 1 1.288 0l115.686 57.843a3.13 3.13 0 0 1 1.73 2.8v54.331a1.44 1.44 0 0 1-.796 1.288l-1.69.845a1.44 1.44 0 0 1-1.288 0l-115.686-57.843a3.13 3.13 0 0 1-1.73-2.8v-54.331c0-.545.308-1.044.796-1.288z"></path><path stroke="#2E2E32" strokeLinecap="round" d="M86.98899999999999 101.994l113.061 56.531a3.38 3.38 0 0 1 1.868 3.023v51.995000000000005"></path></g><g strokeWidth="0.5"><path fill="#08090A" stroke="#62666D" d="M77.894 123.72799999999998a1.44 1.44 0 0 1 1.288 0l115.686 57.843a3.13 3.13 0 0 1 1.73 2.8v34.049a1.44 1.44 0 0 1-.796 1.288l-1.69.845a1.44 1.44 0 0 1-1.288 0l-115.686-57.843a3.13 3.13 0 0 1-1.73-2.8v-34.049c0-.545.308-1.044.796-1.288z"></path><path stroke="#2E2E32" strokeLinecap="round" d="M78.539 126.50599999999999l113.061 56.531a3.38 3.38 0 0 1 1.868 3.023v31.713"></path></g><g strokeWidth="0.5"><path fill="#08090A" stroke="#62666D" d="M69.44400000000002 141.478a1.44 1.44 0 0 1 1.288 0l115.686 57.843a3.13 3.13 0 0 1 1.73 2.8v20.529a1.44 1.44 0 0 1-.796 1.288l-1.69.845a1.44 1.44 0 0 1-1.288 0l-115.686-57.843a3.13 3.13 0 0 1-1.73-2.8v-20.529c0-.545.308-1.044.796-1.288z"></path><path stroke="#2E2E32" strokeLinecap="round" d="M70.08900000000001 144.256l113.061 56.531a3.38 3.38 0 0 1 1.868 3.023v18.193"></path></g><g strokeWidth="0.5"><path fill="#08090A" stroke="#62666D" d="M60.994 152.459a1.44 1.44 0 0 1 1.288 0l115.686 57.843a3.13 3.13 0 0 1 1.73 2.8v13.768a1.44 1.44 0 0 1-.796 1.288l-1.69.845a1.44 1.44 0 0 1-1.288 0l-115.686-57.843a3.13 3.13 0 0 1-1.73-2.8v-13.768c0-.545.308-1.044.796-1.288z"></path><path stroke="#2E2E32" strokeLinecap="round" d="M61.639 155.237l113.061 56.531a3.38 3.38 0 0 1 1.868 3.023v11.432"></path></g><g strokeWidth="0.5"><path fill="#08090A" stroke="#62666D" d="M52.54400000000001 160.06a1.44 1.44 0 0 1 1.288 0l115.686 57.843a3.13 3.13 0 0 1 1.73 2.8v10.387a1.44 1.44 0 0 1-.796 1.288l-1.69.845a1.44 1.44 0 0 1-1.288 0l-115.686-57.843a3.13 3.13 0 0 1-1.73-2.8v-10.387c0-.545.308-1.044.796-1.288z"></path><path stroke="#2E2E32" strokeLinecap="round" d="M53.189000000000014 162.838l113.061 56.531a3.38 3.38 0 0 1 1.868 3.023v8.051"></path></g><g strokeWidth="0.5"><path fill="#08090A" stroke="#62666D" d="M44.093999999999994 165.97899999999998a1.44 1.44 0 0 1 1.288 0l115.686 57.843a3.13 3.13 0 0 1 1.73 2.8v8.698a1.44 1.44 0 0 1-.796 1.288l-1.69.845a1.44 1.44 0 0 1-1.288 0l-115.686-57.843a3.13 3.13 0 0 1-1.73-2.8v-8.698c0-.545.308-1.044.796-1.288z"></path><path stroke="#2E2E32" strokeLinecap="round" d="M44.739 168.75699999999998l113.061 56.531a3.38 3.38 0 0 1 1.868 3.023v6.362"></path></g><g strokeWidth="0.5"><path fill="#08090A" stroke="#62666D" d="M35.634000000000015 171.055a1.44 1.44 0 0 1 1.288 0l115.686 57.843a3.13 3.13 0 0 1 1.73 2.8v7.852a1.44 1.44 0 0 1-.796 1.288l-1.69.845a1.44 1.44 0 0 1-1.288 0l-115.686-57.843a3.13 3.13 0 0 1-1.73-2.8v-7.852c0-.545.308-1.044.796-1.288z"></path><path stroke="#2E2E32" strokeLinecap="round" d="M36.27900000000002 173.833l113.061 56.531a3.38 3.38 0 0 1 1.868 3.023v5.516"></path></g><g strokeWidth="0.5"><path fill="#08090A" stroke="#62666D" d="M27.183999999999997 175.274a1.44 1.44 0 0 1 1.288 0l115.686 57.843a3.13 3.13 0 0 1 1.73 2.8v7.853a1.44 1.44 0 0 1-.796 1.288l-1.69.845a1.44 1.44 0 0 1-1.288 0l-115.686-57.843a3.13 3.13 0 0 1-1.73-2.8v-7.853c0-.545.308-1.044.796-1.288z"></path><path stroke="#2E2E32" strokeLinecap="round" d="M27.828999999999997 178.052l113.061 56.531a3.38 3.38 0 0 1 1.868 3.023v5.5169999999999995"></path></g><g strokeWidth="0.5"><path fill="#08090A" stroke="#62666D" d="M18.73400000000001 179.504a1.44 1.44 0 0 1 1.288 0l115.686 57.843a3.13 3.13 0 0 1 1.73 2.8v7.853a1.44 1.44 0 0 1-.796 1.288l-1.69.845a1.44 1.44 0 0 1-1.288 0l-115.686-57.843a3.13 3.13 0 0 1-1.73-2.8v-7.853c0-.545.308-1.044.796-1.288z"></path><path stroke="#2E2E32" strokeLinecap="round" d="M19.37900000000001 182.28199999999998l113.061 56.531a3.38 3.38 0 0 1 1.868 3.023v5.5169999999999995"></path></g></svg>
               </div>
             </div>
 
-            {/* Reconciliation Diff Badge Graphic */}
-            <div className="w-full lg:w-96 rounded-xl border border-[#eb5757]/30 bg-[#08090a] p-5 font-mono text-xs space-y-3 shrink-0 shadow-[0_0_25px_rgba(235,87,87,0.08)]">
-              <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
-                <span className="text-[11px] text-[#eb5757] font-semibold">RECONCILIATION RESULT</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#eb5757]/20 text-[#eb5757] font-bold">
-                  PAYMENT BLOCKED
-                </span>
-              </div>
-
-              <div className="space-y-2 text-[11px]">
-                <div className="flex justify-between items-center text-[#4ebe82]">
-                  <span>REGISTERED IFSC:</span>
-                  <span className="font-bold">DEMO0001111</span>
-                </div>
-                <div className="flex justify-between items-center text-[#eb5757]">
-                  <span>INCOMING IFSC:</span>
-                  <span className="font-bold">DEMO0002222 ⚠️</span>
-                </div>
-                <div className="h-[1px] bg-white/[0.06] my-1" />
-                <div className="text-[10px] text-[#8a8f98] leading-tight">
-                  Discrepancy: Extracted routing points to an unauthorized branch in Connaught Place rather than Bandra West.
-                </div>
-              </div>
-
-              <Link
-                href="/investigations/new"
-                className="w-full mt-2 inline-flex items-center justify-center gap-2 py-2 rounded-md bg-white/[0.04] hover:bg-white/[0.08] text-[#f7f8f8] text-[11px] border border-white/[0.08] transition-colors"
-              >
-                <span>Run Verification Test</span>
-                <ArrowRight className="w-3 h-3 text-[#5e6ad2]" />
-              </Link>
+            {/* Footer */}
+            <div className="space-y-2 pt-4">
+              <h3 className="text-[15px] font-medium text-[#f7f8f8] tracking-tight">
+                Sub-second Interception
+              </h3>
+              <p className="text-xs sm:text-[13px] text-[#8a8f98] leading-relaxed font-normal">
+                Real-time RFC822 threat reasoning with Gemini 2.0 Flash. Evaluates SPF/DKIM, urgent coercion, and spoofed headers before wires clear.
+              </p>
             </div>
           </div>
+
         </div>
       </div>
+
+      <style jsx global>{`
+        /* Dot pulse animation for Fig 0.2 agents */
+        @keyframes pulseGridDot {
+          0%, 100% { opacity: 0.2; transform: scale(0.9); }
+          50% { opacity: 1; transform: scale(1.15); }
+        }
+        ._3fVNxW_agentsWrapper {
+          position: relative;
+          width: 304px;
+          height: 281px;
+        }
+        ._3fVNxW_gridLoader {
+          position: absolute;
+          transform: rotate(-30deg) skewX(30deg) scale(0.9);
+          transform-origin: center;
+          pointer-events: none;
+          z-index: 2;
+        }
+        /* Left block top */
+        ._3fVNxW_gridLoader:not(._3fVNxW_gridLoaderPong):not(._3fVNxW_gridLoaderAgent) {
+          left: 78px;
+          top: 68px;
+        }
+        /* Top block top */
+        ._3fVNxW_gridLoaderPong {
+          left: 142px;
+          top: 16px;
+        }
+        /* Front block top */
+        ._3fVNxW_gridLoaderAgent {
+          left: 142px;
+          top: 160px;
+        }
+        .grid-dot-0-0-upDown, .grid-dot-1-1-upDown, .grid-dot-2-2-upDown, .grid-dot-3-3-upDown, .grid-dot-4-4-upDown,
+        .grid-dot-0-2-pong, .grid-dot-2-0-pong, .grid-dot-2-4-pong, .grid-dot-4-2-pong,
+        .grid-dot-1-3-agent, .grid-dot-3-1-agent, .grid-dot-2-2-agent {
+          animation: pulseGridDot 2.4s ease-in-out infinite;
+        }
+        .grid-dot-0-2-pong, .grid-dot-2-4-pong {
+          animation-delay: 0.8s;
+        }
+        .grid-dot-1-3-agent, .grid-dot-3-1-agent {
+          animation-delay: 1.6s;
+        }
+      `}</style>
     </section>
   );
 }
