@@ -49,6 +49,11 @@ function setLocalCache<T>(key: string, data: T[]): void {
   }
 }
 
+// Helper to sanitize documents before writing to Firestore (strips undefined fields)
+function sanitizeDoc<T>(docData: T): Record<string, any> {
+  return JSON.parse(JSON.stringify(docData));
+}
+
 /* =========================================================================
    1. INVESTIGATIONS SERVICE
 ========================================================================= */
@@ -63,7 +68,7 @@ export async function addInvestigationDoc(
 
   if (isFirebaseConfigured && db) {
     try {
-      await setDoc(doc(db, "workspaces", workspaceId, "investigations", item.id), item);
+      await setDoc(doc(db, "workspaces", workspaceId, "investigations", item.id), sanitizeDoc(item));
     } catch (e) {
       console.warn("Firestore write investigation error:", e);
     }
@@ -117,7 +122,7 @@ export async function addSupplierDoc(
 
   if (isFirebaseConfigured && db) {
     try {
-      await setDoc(doc(db, "workspaces", workspaceId, "suppliers", supplier.id), supplier);
+      await setDoc(doc(db, "workspaces", workspaceId, "suppliers", supplier.id), sanitizeDoc(supplier));
     } catch (e) {
       console.warn("Firestore write supplier error:", e);
     }
@@ -170,7 +175,7 @@ export async function addEvidenceDoc(
 
   if (isFirebaseConfigured && db) {
     try {
-      await setDoc(doc(db, "workspaces", workspaceId, "evidence", evidence.id), evidence);
+      await setDoc(doc(db, "workspaces", workspaceId, "evidence", evidence.id), sanitizeDoc(evidence));
     } catch (e) {
       console.warn("Firestore write evidence error:", e);
     }
@@ -223,7 +228,7 @@ export async function addEntityDoc(
 
   if (isFirebaseConfigured && db) {
     try {
-      await setDoc(doc(db, "workspaces", workspaceId, "entities", entity.id), entity);
+      await setDoc(doc(db, "workspaces", workspaceId, "entities", entity.id), sanitizeDoc(entity));
     } catch (e) {
       console.warn("Firestore write entity error:", e);
     }
@@ -304,7 +309,7 @@ export async function addInvoiceDoc(
 
   if (isFirebaseConfigured && db) {
     try {
-      await setDoc(doc(db, "workspaces", workspaceId, "invoices", invoice.id), invoice);
+      await setDoc(doc(db, "workspaces", workspaceId, "invoices", invoice.id), sanitizeDoc(invoice));
     } catch (e) {
       console.warn("Firestore write invoice error:", e);
     }
@@ -364,7 +369,7 @@ export async function addInboxAlertDoc(
 
   if (isFirebaseConfigured && db) {
     try {
-      await setDoc(doc(db, "workspaces", workspaceId, "inbox_alerts", alert.id), alert);
+      await setDoc(doc(db, "workspaces", workspaceId, "inbox_alerts", alert.id), sanitizeDoc(alert));
     } catch (e) {
       console.warn("Firestore write alert error:", e);
     }
@@ -424,7 +429,7 @@ export async function addReviewDoc(
 
   if (isFirebaseConfigured && db) {
     try {
-      await setDoc(doc(db, "workspaces", workspaceId, "reviews", review.id), review);
+      await setDoc(doc(db, "workspaces", workspaceId, "reviews", review.id), sanitizeDoc(review));
     } catch (e) {
       console.warn("Firestore write review error:", e);
     }
@@ -484,7 +489,7 @@ export async function addDossierDoc(
 
   if (isFirebaseConfigured && db) {
     try {
-      await setDoc(doc(db, "workspaces", workspaceId, "dossiers", dossier.id), dossier);
+      await setDoc(doc(db, "workspaces", workspaceId, "dossiers", dossier.id), sanitizeDoc(dossier));
     } catch (e) {
       console.warn("Firestore write dossier error:", e);
     }

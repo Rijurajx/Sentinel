@@ -320,11 +320,11 @@ export function QuickCreateModal({
           associatedInvestigationId: evIncident.trim() || "GLOBAL-QUEUE",
           uploadedAt: "Just now",
           status: analysis.threat_detected ? "Flagged" : "Extracted",
-          fileData: filePreview || undefined,
-          mimeType: fileMime || undefined,
-          threatSummary: analysis.summary,
-          threatCategory: analysis.threat_category,
-          severity: analysis.severity,
+          ...(filePreview ? { fileData: filePreview } : {}),
+          ...(fileMime ? { mimeType: fileMime } : {}),
+          ...(analysis.summary ? { threatSummary: analysis.summary } : {}),
+          ...(analysis.threat_category ? { threatCategory: analysis.threat_category } : {}),
+          ...(analysis.severity ? { severity: analysis.severity } : {}),
         };
         onCreateEvidence(newEv);
         setEvTitle("");
