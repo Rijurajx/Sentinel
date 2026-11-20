@@ -778,12 +778,13 @@ export function QuickCreateModal({
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] text-[#8a8f98]">File Size</label>
+                  <label className="text-[11px] text-[#8a8f98]">Incident Reference / Case ID</label>
                   <input
                     type="text"
-                    value={evSize}
-                    onChange={(e) => setEvSize(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs text-[#f7f8f8] focus:outline-none font-mono"
+                    placeholder="e.g. INC-801 or GLOBAL-QUEUE"
+                    value={evIncident}
+                    onChange={(e) => setEvIncident(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs font-mono text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-white/20"
                   />
                 </div>
               </div>
