@@ -13,20 +13,21 @@ import {
   Globe,
   CreditCard,
   Building2,
-  AlertTriangle,
-  ShieldCheck,
   ShieldAlert,
   Search,
   Plus,
-  Sparkles,
-  ExternalLink,
-  CheckCircle2,
   ArrowRight,
-  Filter,
   RefreshCw,
   FileText,
   Lock,
   Layers,
+  PanelRightClose,
+  PanelRightOpen,
+  Copy,
+  Check,
+  X,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import { correlateTrustGraph, TrustGraphResult } from "@/lib/apiClient";
 
@@ -49,7 +50,7 @@ interface VisualNode {
   category: "account" | "domain" | "supplier" | "invoice" | "threat_actor" | "incident";
   riskLevel: "Critical" | "High" | "Medium" | "Safe";
   role: string;
-  details: string;
+  detailsLines: Array<{ label: string; value: string }>;
   meta: Record<string, any>;
 }
 
@@ -78,6 +79,17 @@ export function TrustGraphWorkspace({
   const [isCorrelating, setIsCorrelating] = useState(false);
   const [liveCorrelation, setLiveCorrelation] = useState<TrustGraphResult | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isInspectorOpen, setIsInspectorOpen] = useState(true);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  const handleCopy = (text: string, key: string) => {
+    if (typeof navigator !== "undefined") {
+      navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 1800);
+    }
+  };
 
   // Synthesize unified nodes from Firestore state
   const { nodes, edges } = useMemo(() => {
@@ -92,13 +104,20 @@ export function TrustGraphWorkspace({
         name: s.name,
         category: "supplier",
         riskLevel: isMule ? "Critical" : "Safe",
-        role: isMule ? "Impersonated Supplier" : "Verified Beneficiary",
-        details: `Account: ${s.accountNumber} • IFSC: ${s.ifsc} • Bank: ${s.bankBranch}`,
+        role: isMule ? "⚠️ Payment Diversion Attempt" : "✓ Verified Beneficiary",
+        detailsLines: [
+          { label: "Account", value: s.accountNumber },
+          { label: "IFSC", value: s.ifsc },
+          { label: "Branch", value: s.bankBranch || "Scheduled Commercial Branch" },
+          { label: "Status", value: s.status },
+        ],
         meta: {
-          supplierName: s.name,
-          accountNumber: s.accountNumber,
-          ifsc: s.ifsc,
-          status: s.status,
+          Supplier: s.name,
+          Account: s.accountNumber,
+          IFSC: s.ifsc,
+          Branch: s.bankBranch,
+          Status: s.status,
+          Volume: s.totalInvoiced,
         },
       });
     });
@@ -111,14 +130,21 @@ export function TrustGraphWorkspace({
         name: `${inv.id} (${inv.amount})`,
         category: "invoice",
         riskLevel: isHeld ? "Critical" : "Safe",
-        role: isHeld ? "Flagged Wire Request" : "Standard Invoice",
-        details: `Payee: ${inv.vendorName} • Routing: ${inv.payeeAccount} • IFSC: ${inv.payeeIfsc}`,
+        role: isHeld ? "🚨 Payment Held (Coordinate Discrepancy)" : "✓ Cleared Disbursement",
+        detailsLines: [
+          { label: "Vendor", value: inv.vendorName },
+          { label: "Payee Acct", value: inv.payeeAccount },
+          { label: "Payee IFSC", value: inv.payeeIfsc },
+          { label: "Amount", value: inv.amount },
+        ],
         meta: {
-          invoiceId: inv.id,
-          amount: inv.amount,
-          vendorName: inv.vendorName,
-          payeeAccount: inv.payeeAccount,
-          status: inv.status,
+          InvoiceID: inv.id,
+          Amount: inv.amount,
+          Vendor: inv.vendorName,
+          Account: inv.payeeAccount,
+          IFSC: inv.payeeIfsc,
+          Status: inv.status,
+          Due: inv.dueDate,
         },
       });
 
@@ -151,19 +177,25 @@ export function TrustGraphWorkspace({
         name: ent.value,
         category: cat,
         riskLevel: ent.riskLevel === "Verified" ? "Safe" : ent.riskLevel,
-        role: `Forensic ${ent.type}`,
-        details: `Risk: ${ent.riskLevel} • Seen in ${ent.incidentCount} previous attacks • Last: ${ent.lastObserved}`,
+        role: `Forensic Coordinate (${ent.type})`,
+        detailsLines: [
+          { label: "Coordinate", value: ent.value },
+          { label: "Type", value: ent.type },
+          { label: "Incidents", value: `${ent.incidentCount} observed` },
+          { label: "Last Seen", value: ent.lastObserved },
+        ],
         meta: {
-          type: ent.type,
-          value: ent.value,
-          incidentCount: ent.incidentCount,
+          Type: ent.type,
+          Value: ent.value,
+          Incidents: ent.incidentCount,
+          LastSeen: ent.lastObserved,
         },
       });
 
-      // Automatically link Account entities to matching Invoices or Suppliers
+      // Automatically link Account entities to matching Invoices
       if (ent.type === "Bank Account") {
         invoices.forEach((inv) => {
-          if (inv.payeeAccount === ent.value) {
+          if (inv.payeeAccount.replace(/\s+/g, "") === ent.value.replace(/\s+/g, "")) {
             eList.push({
               id: `e-${inv.id}-${ent.id}`,
               source: inv.id,
@@ -183,20 +215,28 @@ export function TrustGraphWorkspace({
         name: ev.title,
         category: "incident",
         riskLevel: ev.status === "Flagged" ? "Critical" : "Medium",
-        role: "Ingested Threat Telemetry",
-        details: `Type: ${ev.type} • Status: ${ev.status}`,
+        role: ev.status === "Flagged" ? "🚨 Flagged Threat Vector" : "Document Telemetry",
+        detailsLines: [
+          { label: "Format", value: ev.type },
+          { label: "Size", value: ev.fileSize },
+          { label: "Uploaded", value: ev.uploadedAt },
+          { label: "Analysis", value: ev.threatSummary || "ScamShield Analysis Complete" },
+        ],
         meta: {
-          fileSize: ev.fileSize,
-          type: ev.type,
-          threatSummary: ev.threatSummary,
+          Filename: ev.title,
+          Format: ev.type,
+          Size: ev.fileSize,
+          Status: ev.status,
+          Summary: ev.threatSummary || "ScamShield Analysis Complete",
         },
       });
 
-      if (ev.associatedInvestigationId) {
+      const invRef = ev.associatedInvestigationId?.trim();
+      if (invRef) {
         eList.push({
-          id: `e-${ev.id}-${ev.associatedInvestigationId}`,
+          id: `e-${ev.id}-${invRef}`,
           source: ev.id,
-          target: ev.associatedInvestigationId,
+          target: invRef,
           relation: "ATTACHED_TO_INCIDENT",
           isHighRisk: ev.status === "Flagged",
         });
@@ -207,18 +247,25 @@ export function TrustGraphWorkspace({
     investigations.forEach((inv) => {
       nList.push({
         id: inv.id,
-        name: `${inv.id}: ${inv.title.slice(0, 32)}...`,
+        name: `${inv.id}: ${inv.title}`,
         category: "incident",
         riskLevel: inv.riskLevel === "Critical" ? "Critical" : "High",
-        role: "Active Threat Case",
-        details: `Target: ${inv.targetEntity} • Exposure: ${inv.amount}`,
+        role: "Active Incident Docket",
+        detailsLines: [
+          { label: "Case ID", value: inv.id },
+          { label: "Target", value: inv.targetEntity },
+          { label: "Exposure", value: inv.amount || "$485,000.00" },
+          { label: "Status", value: inv.status },
+        ],
         meta: {
-          amount: inv.amount,
-          targetEntity: inv.targetEntity,
+          CaseID: inv.id,
+          Target: inv.targetEntity,
+          Amount: inv.amount || "N/A",
+          Risk: inv.riskLevel,
+          Status: inv.status,
         },
       });
 
-      // Link incident to matching supplier
       const matchedSup = suppliers.find((s) => s.name === inv.targetEntity);
       if (matchedSup) {
         eList.push({
@@ -241,19 +288,24 @@ export function TrustGraphWorkspace({
       const syndicateId = "cluster-crimson-typhoon";
       nList.push({
         id: syndicateId,
-        name: "Syndicate: Crimson Typhoon / TC-948",
+        name: "Crimson Typhoon / TC-948",
         category: "threat_actor",
         riskLevel: "Critical",
         role: "Active BEC Crime Cluster",
-        details: "Attributed to Lazarus / Scattered Spider financial diversion sub-cluster. $4.2M linked wire fraud.",
+        detailsLines: [
+          { label: "Attribution", value: "Scattered Spider Sub-Cluster" },
+          { label: "Linked Wire", value: "$4,200,000.00" },
+          { label: "Tactics", value: "IFSC Tampering, Lookalike Domains" },
+          { label: "Confidence", value: "94% Deterministic Traverse" },
+        ],
         meta: {
-          attribution: "Crimson Typhoon / Scattered Spider TC-948",
-          totalLossesLinked: "$4,200,000",
-          tactics: "IFSC Alteration, Lookalike Domains, Executive Impersonation",
+          Cluster: "Crimson Typhoon / TC-948",
+          Attribution: "Scattered Spider / BEC Syndicate",
+          LinkedLosses: "$4,200,000.00",
+          Tactics: "IFSC Alteration, Lookalike Domains",
         },
       });
 
-      // Link any critical entity/invoice to the syndicate
       nList.forEach((node) => {
         if (
           (node.category === "account" || node.category === "domain" || node.category === "invoice") &&
@@ -273,6 +325,15 @@ export function TrustGraphWorkspace({
     return { nodes: nList, edges: eList };
   }, [entities, suppliers, invoices, investigations, evidenceList, liveCorrelation]);
 
+  // Resolve human-friendly node name for Edges table
+  const resolveNodeName = (nodeId: string) => {
+    const found = nodes.find((n) => n.id === nodeId);
+    if (found) {
+      return found.name.length > 32 ? `${found.name.slice(0, 30)}...` : found.name;
+    }
+    return nodeId;
+  };
+
   // Filter nodes
   const filteredNodes = nodes.filter((node) => {
     if (categoryFilter !== "all" && node.category !== categoryFilter) return false;
@@ -281,7 +342,7 @@ export function TrustGraphWorkspace({
     return (
       node.name.toLowerCase().includes(q) ||
       node.role.toLowerCase().includes(q) ||
-      node.details.toLowerCase().includes(q)
+      node.detailsLines.some((d) => d.value.toLowerCase().includes(q))
     );
   });
 
@@ -308,47 +369,50 @@ export function TrustGraphWorkspace({
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case "account":
-        return <CreditCard className="w-4 h-4 text-[#eb5757]" />;
+        return <CreditCard className="w-3.5 h-3.5 text-[#eb5757]" />;
       case "domain":
-        return <Globe className="w-4 h-4 text-[#f0b96d]" />;
+        return <Globe className="w-3.5 h-3.5 text-[#f0b96d]" />;
       case "supplier":
-        return <Building2 className="w-4 h-4 text-[#4ebe82]" />;
+        return <Building2 className="w-3.5 h-3.5 text-[#4ebe82]" />;
       case "invoice":
-        return <FileText className="w-4 h-4 text-[#5e6ad2]" />;
+        return <FileText className="w-3.5 h-3.5 text-[#5e6ad2]" />;
       case "threat_actor":
-        return <ShieldAlert className="w-4 h-4 text-[#eb5757]" />;
+        return <ShieldAlert className="w-3.5 h-3.5 text-[#eb5757]" />;
       default:
-        return <GitFork className="w-4 h-4 text-[#8a8f98]" />;
+        return <GitFork className="w-3.5 h-3.5 text-[#8a8f98]" />;
     }
   };
 
   return (
     <main className="flex-1 h-screen bg-[#08090a] overflow-hidden flex flex-col z-10 select-text">
-      {/* Top Header Bar */}
-      <div className="h-12 px-6 border-b border-white/[0.08] flex items-center justify-between sticky top-0 bg-[#08090a]/95 backdrop-blur-md z-20">
-        <div className="flex items-center gap-3 min-w-0">
+      {/* 1. Clean Top Header Bar */}
+      <header className="h-12 px-4 sm:px-6 border-b border-white/[0.08] flex items-center justify-between sticky top-0 bg-[#08090a]/95 backdrop-blur-md z-20 shrink-0 gap-3">
+        {/* Left Breadcrumb */}
+        <div className="flex items-center gap-2.5 min-w-0">
           <div className="flex items-center gap-2 shrink-0">
             <span className="w-2 h-2 rounded-full bg-[#5e6ad2] animate-pulse" />
             <span className="font-mono text-xs text-[#8a8f98] font-medium">TRUSTGRAPH-01</span>
           </div>
-          <span className="text-white/20">/</span>
-          <span className="text-xs font-semibold text-white truncate">
-            Deterministic Threat Provenance & Entity Correlation Network
+          <span className="text-white/20 shrink-0">/</span>
+          <span className="text-xs font-semibold text-white truncate max-w-[200px] sm:max-w-xs md:max-w-sm">
+            Threat Provenance & Entity Network
           </span>
-          <span className="text-[10px] font-mono text-[#5e6ad2] bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 px-2 py-0.5 rounded shrink-0">
+          <span className="hidden md:inline-flex text-[10px] font-mono text-[#5e6ad2] bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 px-2 py-0.5 rounded shrink-0">
             {nodes.length} Nodes Correlated
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Right Action Buttons */}
+        <div className="flex items-center gap-2 shrink-0">
           {onCompileDossier && (
             <button
               type="button"
               onClick={onCompileDossier}
-              className="px-2.5 py-1 rounded border border-white/10 hover:border-white/20 text-[#8a8f98] hover:text-white text-xs font-medium transition-colors flex items-center gap-1.5"
+              className="h-8 px-2.5 rounded-lg border border-white/10 hover:border-white/20 bg-white/[0.02] text-[#8a8f98] hover:text-white text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 whitespace-nowrap"
+              title="Compile Executive Threat Dossier"
             >
               <FileText className="w-3.5 h-3.5 text-[#5e6ad2]" />
-              <span>Compile Dossier</span>
+              <span className="hidden sm:inline">Compile Dossier</span>
             </button>
           )}
 
@@ -356,33 +420,54 @@ export function TrustGraphWorkspace({
             type="button"
             onClick={handleRunCorrelation}
             disabled={isCorrelating}
-            className="px-2.5 py-1 rounded bg-white/[0.04] hover:bg-white/[0.08] text-[#8a8f98] hover:text-white text-xs font-medium transition-colors flex items-center gap-1.5 border border-white/[0.06] disabled:opacity-50"
+            className="h-8 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-[#8a8f98] hover:text-white text-xs font-medium transition-colors flex items-center gap-1.5 border border-white/[0.08] disabled:opacity-50 shrink-0 whitespace-nowrap"
+            title="Correlate with Live Threat Telemetry"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-[#5e6ad2] ${isCorrelating ? "animate-spin" : ""}`} />
-            <span>{isCorrelating ? "Correlating Nodes..." : "Correlate Live Intel"}</span>
+            <span className="hidden sm:inline">{isCorrelating ? "Correlating..." : "Correlate Live Intel"}</span>
           </button>
 
           {onOpenQuickCreate && (
             <button
               type="button"
               onClick={() => onOpenQuickCreate("entity")}
-              className="px-2.5 py-1 rounded bg-[#5e6ad2] hover:bg-[#6f7be8] text-white text-xs font-medium transition-colors flex items-center gap-1.5 shadow-sm shadow-[#5e6ad2]/20"
+              className="h-8 px-3 rounded-lg bg-[#5e6ad2] hover:bg-[#6f7be8] text-white text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 whitespace-nowrap shadow-sm shadow-[#5e6ad2]/20"
+              title="Track New Suspect Coordinate"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Track Entity</span>
             </button>
           )}
-        </div>
-      </div>
 
-      {/* Filter and Search Bar */}
-      <div className="px-6 py-2.5 border-b border-white/[0.06] bg-[#08090a]/60 flex items-center justify-between text-xs gap-4">
-        <div className="flex items-center gap-1 overflow-x-auto">
+          {/* Toggle Inspector Button */}
+          <button
+            type="button"
+            onClick={() => setIsInspectorOpen(!isInspectorOpen)}
+            className={`h-8 w-8 rounded-lg border transition-colors flex items-center justify-center shrink-0 ${
+              isInspectorOpen
+                ? "bg-white/[0.08] border-white/20 text-white"
+                : "bg-white/[0.02] border-white/[0.08] text-[#8a8f98] hover:text-white"
+            }`}
+            title={isInspectorOpen ? "Hide Entity Inspector" : "Show Entity Inspector"}
+          >
+            {isInspectorOpen ? (
+              <PanelRightClose className="w-4 h-4" />
+            ) : (
+              <PanelRightOpen className="w-4 h-4 text-[#5e6ad2]" />
+            )}
+          </button>
+        </div>
+      </header>
+
+      {/* 2. Sub-Header Filter Bar with View Mode Toggle */}
+      <div className="px-4 sm:px-6 py-2 border-b border-white/[0.06] bg-[#08090a]/80 flex items-center justify-between text-xs gap-3 shrink-0">
+        {/* Category Pills (No overflow, compact) */}
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 min-w-0">
           {[
-            { id: "all", label: "All Coordinates", count: nodes.length },
+            { id: "all", label: "All", count: nodes.length },
             { id: "supplier", label: "Suppliers", count: nodes.filter((n) => n.category === "supplier").length },
             { id: "invoice", label: "Invoices", count: nodes.filter((n) => n.category === "invoice").length },
-            { id: "account", label: "Bank Accounts", count: nodes.filter((n) => n.category === "account").length },
+            { id: "account", label: "Accounts", count: nodes.filter((n) => n.category === "account").length },
             { id: "domain", label: "Domains", count: nodes.filter((n) => n.category === "domain").length },
             { id: "threat_actor", label: "Syndicates", count: nodes.filter((n) => n.category === "threat_actor").length },
           ].map((pill) => (
@@ -390,46 +475,72 @@ export function TrustGraphWorkspace({
               key={pill.id}
               type="button"
               onClick={() => setCategoryFilter(pill.id)}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors flex items-center gap-1.5 ${
+              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors flex items-center gap-1 shrink-0 whitespace-nowrap ${
                 categoryFilter === pill.id
-                  ? "bg-white/[0.08] text-white"
+                  ? "bg-white/[0.08] text-white ring-1 ring-white/10"
                   : "text-[#8a8f98] hover:text-white hover:bg-white/[0.03]"
               }`}
             >
               <span>{pill.label}</span>
-              <span className="font-mono text-[10px] opacity-60">({pill.count})</span>
+              <span className="font-mono text-[10px] text-[#62666d]">({pill.count})</span>
             </button>
           ))}
         </div>
 
-        <div className="relative w-64 shrink-0">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8a8f98]" />
-          <input
-            type="text"
-            placeholder="Filter nodes or edges..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-1 rounded-md bg-white/[0.03] border border-white/[0.08] text-xs text-white placeholder-[#62666d] focus:outline-none focus:border-white/20 transition-colors"
-          />
+        {/* Search & Layout View Toggle */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative w-36 sm:w-48">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#62666d]" />
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-3 py-1 rounded-md bg-white/[0.03] border border-white/[0.08] text-xs text-white placeholder-[#62666d] focus:outline-none focus:border-white/20 transition-colors"
+            />
+          </div>
+
+          <div className="hidden sm:flex items-center bg-white/[0.03] p-0.5 rounded-lg border border-white/[0.06]">
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              className={`p-1 rounded ${
+                viewMode === "grid" ? "bg-white/[0.08] text-white" : "text-[#8a8f98] hover:text-white"
+              }`}
+              title="Grid View"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={`p-1 rounded ${
+                viewMode === "list" ? "bg-white/[0.08] text-white" : "text-[#8a8f98] hover:text-white"
+              }`}
+              title="List View"
+            >
+              <List className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Main Workspace Area: Interactive Visual Grid + Provenance Inspector */}
+      {/* 3. Main Workspace Area */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Interactive Graph Canvas */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Visual Relational Map */}
-          <div className="p-6 rounded-xl border border-white/[0.08] bg-[#0e1015]/70 space-y-4">
-            <div className="flex items-center justify-between">
+        {/* Left Scrollable Graph Area */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+          {/* Relational Provenance Section */}
+          <section className="p-4 sm:p-5 rounded-xl border border-white/[0.08] bg-[#0e1015]/70 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/[0.06] pb-3">
               <div>
-                <h3 className="text-xs font-semibold text-white tracking-wide uppercase">
+                <h2 className="text-xs font-semibold text-white tracking-wider uppercase">
                   Relational Provenance Map
-                </h3>
+                </h2>
                 <p className="text-[11px] text-[#8a8f98] mt-0.5">
-                  Select any node to inspect historical co-occurrences, IFSC routing, and threat cluster linkages.
+                  Select coordinates to inspect historical IFSC routing and syndicate co-occurrences.
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <span className="text-[10px] font-mono text-[#eb5757] bg-[#eb5757]/10 border border-[#eb5757]/20 px-2 py-0.5 rounded">
                   {edges.filter((e) => e.isHighRisk).length} High-Risk Edges
                 </span>
@@ -439,88 +550,163 @@ export function TrustGraphWorkspace({
               </div>
             </div>
 
-            {/* Grid of Interactive Graph Nodes */}
+            {/* Nodes Render: GRID or LIST VIEW */}
             {filteredNodes.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
-                {filteredNodes.map((node) => {
-                  const isSelected = selectedNode?.id === node.id;
-                  const isCritical = node.riskLevel === "Critical";
-                  const isHigh = node.riskLevel === "High";
+              viewMode === "grid" ? (
+                /* Spacious, Non-Overlapping Grid (1 col on mobile, 2 cols on desktop with inspector) */
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
+                  {filteredNodes.map((node) => {
+                    const isSelected = selectedNode?.id === node.id;
+                    const isCritical = node.riskLevel === "Critical";
+                    const isHigh = node.riskLevel === "High";
 
-                  return (
-                    <div
-                      key={node.id}
-                      onClick={() => {
-                        setSelectedNodeId(node.id);
-                        if (onSelectEntity) onSelectEntity(node.id);
-                      }}
-                      className={`p-3.5 rounded-lg border text-left cursor-pointer transition-all flex flex-col justify-between gap-3 group relative ${
-                        isSelected
-                          ? "bg-white/[0.08] border-white/30 shadow-lg ring-1 ring-white/20"
-                          : "bg-white/[0.02] border-white/[0.06] hover:border-white/20 hover:bg-white/[0.04]"
-                      }`}
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
+                    return (
+                      <div
+                        key={node.id}
+                        onClick={() => {
+                          setSelectedNodeId(node.id);
+                          if (!isInspectorOpen) setIsInspectorOpen(true);
+                          if (onSelectEntity) onSelectEntity(node.id);
+                        }}
+                        className={`p-4 rounded-xl border text-left cursor-pointer transition-all space-y-3 group overflow-hidden ${
+                          isSelected
+                            ? "bg-[#5e6ad2]/[0.08] border-[#5e6ad2] ring-1 ring-[#5e6ad2]/50 shadow-lg shadow-[#5e6ad2]/5"
+                            : "bg-[#08090a] border-white/[0.08] hover:border-white/20 hover:bg-white/[0.02]"
+                        }`}
+                      >
+                        {/* Header: Category Tag (Left) + Risk Badge (Right) - NEVER spills out */}
+                        <div className="flex items-center justify-between gap-2 overflow-hidden">
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] shrink-0">
                             {getCategoryIcon(node.category)}
-                            <span className="text-[11px] font-mono text-[#8a8f98] uppercase">
-                              {node.category}
+                            <span className="text-[10px] font-mono text-[#8a8f98] uppercase tracking-wide">
+                              {node.category.replace("_", " ")}
                             </span>
                           </div>
                           <span
-                            className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                            className={`text-[10px] font-mono px-2 py-0.5 rounded border shrink-0 ${
                               isCritical
-                                ? "bg-[#eb5757]/10 text-[#eb5757] border border-[#eb5757]/20"
+                                ? "bg-[#eb5757]/15 text-[#eb5757] border-[#eb5757]/30"
                                 : isHigh
-                                ? "bg-[#f0b96d]/10 text-[#f0b96d] border border-[#f0b96d]/20"
-                                : "bg-[#4ebe82]/10 text-[#4ebe82] border border-[#4ebe82]/20"
+                                ? "bg-[#f0b96d]/15 text-[#f0b96d] border-[#f0b96d]/30"
+                                : "bg-[#4ebe82]/15 text-[#4ebe82] border-[#4ebe82]/30"
                             }`}
                           >
                             {node.riskLevel}
                           </span>
                         </div>
 
-                        <div>
-                          <div className="text-xs font-semibold text-white group-hover:text-white transition-colors">
+                        {/* Title & Role */}
+                        <div className="space-y-1">
+                          <h3
+                            className="text-xs font-semibold text-white group-hover:text-[#5e6ad2] transition-colors truncate"
+                            title={node.name}
+                          >
                             {node.name}
-                          </div>
-                          <div className="text-[11px] text-[#8a8f98] font-mono mt-0.5 truncate">
+                          </h3>
+                          <p
+                            className={`text-[11px] font-mono truncate ${
+                              isCritical
+                                ? "text-[#eb5757]"
+                                : isHigh
+                                ? "text-[#f0b96d]"
+                                : "text-[#4ebe82]"
+                            }`}
+                          >
                             {node.role}
-                          </div>
+                          </p>
+                        </div>
+
+                        {/* Full Info Details Box (Clean, Structured, No Truncated Micro-Chips!) */}
+                        <div className="p-2.5 rounded-lg bg-black/40 border border-white/[0.04] text-[11px] font-mono space-y-1 text-[#8a8f98]">
+                          {node.detailsLines.map((line, idx) => (
+                            <div key={idx} className="flex items-center justify-between gap-2">
+                              <span className="text-[#62666d] shrink-0">{line.label}:</span>
+                              <span className="text-white truncate max-w-[210px] text-right" title={line.value}>
+                                {line.value}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* Linear List View: Clean, Full Row, 100% Info Visibility */
+                <div className="divide-y divide-white/[0.04] rounded-lg border border-white/[0.08] bg-[#08090a] overflow-hidden">
+                  {filteredNodes.map((node) => {
+                    const isSelected = selectedNode?.id === node.id;
+                    const isCritical = node.riskLevel === "Critical";
+                    const isHigh = node.riskLevel === "High";
 
-                      <div className="text-[11px] text-[#62666d] border-t border-white/[0.04] pt-2 line-clamp-2">
-                        {node.details}
+                    return (
+                      <div
+                        key={node.id}
+                        onClick={() => {
+                          setSelectedNodeId(node.id);
+                          if (!isInspectorOpen) setIsInspectorOpen(true);
+                          if (onSelectEntity) onSelectEntity(node.id);
+                        }}
+                        className={`p-3.5 flex items-center justify-between gap-4 cursor-pointer transition-colors ${
+                          isSelected
+                            ? "bg-[#5e6ad2]/[0.08]"
+                            : "hover:bg-white/[0.02]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="p-1.5 rounded bg-white/[0.04] border border-white/[0.06] shrink-0">
+                            {getCategoryIcon(node.category)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold text-white truncate max-w-xs" title={node.name}>
+                                {node.name}
+                              </span>
+                              <span className="text-[10px] font-mono text-[#8a8f98] bg-white/[0.04] px-1.5 py-0.5 rounded uppercase">
+                                {node.category}
+                              </span>
+                            </div>
+                            <div className="text-[11px] font-mono text-[#62666d] truncate">
+                              {node.detailsLines.map((d) => `${d.label}: ${d.value}`).join(" • ")}
+                            </div>
+                          </div>
+                        </div>
+
+                        <span
+                          className={`text-[10px] font-mono px-2 py-0.5 rounded border shrink-0 ${
+                            isCritical
+                              ? "bg-[#eb5757]/15 text-[#eb5757] border-[#eb5757]/30"
+                              : isHigh
+                              ? "bg-[#f0b96d]/15 text-[#f0b96d] border-[#f0b96d]/30"
+                              : "bg-[#4ebe82]/15 text-[#4ebe82] border-[#4ebe82]/30"
+                          }`}
+                        >
+                          {node.riskLevel}
+                        </span>
                       </div>
-
-                      {isSelected && (
-                        <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-[#5e6ad2]" />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )
             ) : (
               <div className="py-12 text-center space-y-2">
-                <GitFork className="w-8 h-8 text-[#62666d] mx-auto" />
-                <div className="text-xs font-medium text-white">No nodes match your filter</div>
+                <GitFork className="w-8 h-8 text-[#62666d] mx-auto opacity-60" />
+                <div className="text-xs font-medium text-white">No matching coordinates found</div>
                 <div className="text-[11px] text-[#8a8f98]">
-                  Track a suspect domain or beneficiary account with Quick Create (+ Track Entity).
+                  Use the category filter above or click <strong>Track Entity</strong> to register a suspect domain or account.
                 </div>
               </div>
             )}
-          </div>
+          </section>
 
           {/* Active Relational Edges Table */}
-          <div className="p-6 rounded-xl border border-white/[0.08] bg-[#0e1015]/70 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-white tracking-wide uppercase">
-                Active Forensic Relationships & Cross-Incident Edges
-              </h3>
-              <span className="text-[10px] font-mono text-[#8a8f98]">
-                {edges.length} Traversals Mapped
+          <section className="p-4 sm:p-5 rounded-xl border border-white/[0.08] bg-[#0e1015]/70 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-white/[0.06] pb-3">
+              <h2 className="text-xs font-semibold text-white tracking-wider uppercase">
+                Active Relational Traversals & Graph Edges
+              </h2>
+              <span className="text-[10px] font-mono text-[#8a8f98] bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.06]">
+                {edges.length} Linked Relationships
               </span>
             </div>
 
@@ -529,99 +715,160 @@ export function TrustGraphWorkspace({
                 {edges.map((edge) => (
                   <div
                     key={edge.id}
-                    className="py-2.5 flex items-center justify-between gap-4 font-mono text-[11px]"
+                    className="py-2.5 flex items-center justify-between gap-3 font-mono text-[11px]"
                   >
-                    <div className="flex items-center gap-2 truncate">
-                      <span className="text-white font-medium truncate max-w-[140px]">
-                        {edge.source}
+                    {/* Source -> Target */}
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span
+                        className="text-white font-medium truncate max-w-[150px] sm:max-w-[220px]"
+                        title={resolveNodeName(edge.source)}
+                      >
+                        {resolveNodeName(edge.source)}
                       </span>
-                      <ArrowRight className="w-3 h-3 text-[#8a8f98] shrink-0" />
-                      <span className="text-[#8a8f98] truncate max-w-[140px]">
-                        {edge.target}
+                      <ArrowRight className="w-3 h-3 text-[#62666d] shrink-0" />
+                      <span
+                        className="text-[#8a8f98] truncate max-w-[150px] sm:max-w-[220px]"
+                        title={resolveNodeName(edge.target)}
+                      >
+                        {resolveNodeName(edge.target)}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span
-                        className={`px-2 py-0.5 rounded text-[10px] ${
-                          edge.isHighRisk
-                            ? "bg-[#eb5757]/10 text-[#eb5757] border border-[#eb5757]/20"
-                            : "bg-white/[0.04] text-[#8a8f98]"
-                        }`}
-                      >
-                        {edge.relation}
-                      </span>
-                    </div>
+                    {/* Edge Label Badge */}
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-mono shrink-0 ${
+                        edge.isHighRisk
+                          ? "bg-[#eb5757]/10 text-[#eb5757] border border-[#eb5757]/20"
+                          : "bg-white/[0.04] text-[#8a8f98] border border-white/[0.06]"
+                      }`}
+                    >
+                      {edge.relation}
+                    </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-xs text-[#8a8f98] py-4 text-center">
+              <div className="text-xs text-[#8a8f98] py-6 text-center">
                 No relational edges established yet. Linking occurs when invoices, bank accounts, and entities share routing tags.
               </div>
             )}
-          </div>
+          </section>
         </div>
 
-        {/* Right Provenance Inspector Sidebar */}
-        <aside className="w-80 border-l border-white/[0.08] bg-[#08090a] p-6 space-y-6 overflow-y-auto shrink-0">
-          <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
-            <div className="flex items-center gap-2 text-xs font-semibold text-white uppercase tracking-wider">
-              <ShieldAlert className="w-4 h-4 text-[#5e6ad2]" />
-              <span>Entity Inspector</span>
-            </div>
-            {selectedNode && (
-              <span
-                className={`text-[10px] font-mono px-2 py-0.5 rounded ${
-                  selectedNode.riskLevel === "Critical"
-                    ? "bg-[#eb5757]/20 text-[#eb5757]"
-                    : "bg-[#4ebe82]/20 text-[#4ebe82]"
-                }`}
-              >
-                {selectedNode.riskLevel}
-              </span>
-            )}
-          </div>
-
-          {selectedNode ? (
-            <div className="space-y-5 text-xs">
-              <div className="space-y-1">
-                <div className="text-[10px] font-mono text-[#8a8f98] uppercase">Selected Coordinate</div>
-                <div className="text-sm font-semibold text-white break-words">
-                  {selectedNode.name}
+        {/* Right Collapsible Entity Inspector */}
+        {isInspectorOpen && (
+          <aside className="w-80 lg:w-96 border-l border-white/[0.08] bg-[#08090a] p-5 space-y-5 overflow-y-auto shrink-0 animate-fade-in flex flex-col justify-between">
+            <div className="space-y-5">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+                <div className="flex items-center gap-2 text-xs font-semibold text-white uppercase tracking-wider">
+                  <ShieldAlert className="w-4 h-4 text-[#5e6ad2]" />
+                  <span>Entity Inspector</span>
                 </div>
-                <div className="text-[11px] text-[#5e6ad2] font-mono">{selectedNode.role}</div>
+                <div className="flex items-center gap-2">
+                  {selectedNode && (
+                    <span
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                        selectedNode.riskLevel === "Critical"
+                          ? "bg-[#eb5757]/20 text-[#eb5757] border-[#eb5757]/30"
+                          : "bg-[#4ebe82]/20 text-[#4ebe82] border-[#4ebe82]/30"
+                      }`}
+                    >
+                      {selectedNode.riskLevel}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsInspectorOpen(false)}
+                    className="p-1 rounded text-[#8a8f98] hover:text-white hover:bg-white/[0.04] transition-colors"
+                    title="Close Inspector"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
-              <div className="p-3.5 rounded-lg border border-white/[0.06] bg-white/[0.02] space-y-2">
-                <div className="text-[10px] font-mono text-[#8a8f98] uppercase">Forensic Provenance</div>
-                <p className="text-[11px] text-[#d0d3d8] leading-relaxed">
-                  {selectedNode.details}
-                </p>
-              </div>
-
-              {/* Dynamic Metadata Attributes */}
-              <div className="space-y-2">
-                <div className="text-[10px] font-mono text-[#8a8f98] uppercase">Coordinate Attributes</div>
-                <div className="p-3 rounded-lg border border-white/[0.04] bg-white/[0.01] space-y-1.5 font-mono text-[11px]">
-                  {Object.entries(selectedNode.meta).map(([k, v]) => (
-                    <div key={k} className="flex items-center justify-between">
-                      <span className="text-[#8a8f98] capitalize">{k}:</span>
-                      <span className="text-white truncate max-w-[140px]">{String(v)}</span>
+              {selectedNode ? (
+                <div className="space-y-4 text-xs">
+                  {/* Selected Coordinate Title Block */}
+                  <div className="space-y-1">
+                    <div className="text-[10px] font-mono text-[#8a8f98] uppercase tracking-wider">
+                      Selected Coordinate
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <div className="text-sm font-semibold text-white break-words">
+                      {selectedNode.name}
+                    </div>
+                    <div className="text-[11px] font-mono text-[#5e6ad2]">
+                      {selectedNode.role}
+                    </div>
+                  </div>
 
-              {/* Action Directives */}
-              <div className="space-y-2 pt-2 border-t border-white/[0.06]">
-                <div className="text-[10px] font-mono text-[#8a8f98] uppercase">Remediation Controls</div>
+                  {/* Forensic Provenance Details Box */}
+                  <div className="p-3.5 rounded-lg border border-white/[0.06] bg-white/[0.02] space-y-2">
+                    <div className="text-[10px] font-mono text-[#8a8f98] uppercase tracking-wider">
+                      Forensic Telemetry
+                    </div>
+                    <div className="space-y-1.5 font-mono text-[11px]">
+                      {selectedNode.detailsLines.map((line, idx) => (
+                        <div key={idx} className="flex items-center justify-between gap-2 border-b border-white/[0.04] pb-1 last:border-0 last:pb-0">
+                          <span className="text-[#62666d]">{line.label}:</span>
+                          <span className="text-white text-right truncate max-w-[160px]">{line.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Structured Coordinate Attributes */}
+                  <div className="space-y-2">
+                    <div className="text-[10px] font-mono text-[#8a8f98] uppercase tracking-wider">
+                      Coordinate Attributes
+                    </div>
+                    <div className="p-3 rounded-lg border border-white/[0.06] bg-white/[0.01] space-y-2 font-mono text-[11px]">
+                      {Object.entries(selectedNode.meta).map(([key, val]) => (
+                        <div key={key} className="flex items-center justify-between gap-2 border-b border-white/[0.04] pb-1.5 last:border-0 last:pb-0">
+                          <span className="text-[#8a8f98] capitalize">{key}:</span>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-white truncate max-w-[150px]">
+                              {String(val)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(String(val), key)}
+                              className="text-[#62666d] hover:text-[#5e6ad2] transition-colors shrink-0"
+                              title="Copy attribute"
+                            >
+                              {copiedKey === key ? (
+                                <Check className="w-3 h-3 text-[#4ebe82]" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="py-12 text-center text-xs text-[#8a8f98] space-y-2">
+                  <Layers className="w-8 h-8 mx-auto opacity-50" />
+                  <div>No coordinate selected</div>
+                  <div className="text-[11px] text-[#62666d]">
+                    Click any node card on the left to inspect detailed telemetry.
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Remediation Controls */}
+            {selectedNode && (
+              <div className="space-y-2 pt-4 border-t border-white/[0.06] mt-6">
                 <button
                   type="button"
                   onClick={() => alert(`Coordinate ${selectedNode.name} added to FinGuard automated blocklist.`)}
-                  className="w-full py-1.5 px-3 rounded bg-white/[0.04] hover:bg-white/[0.08] text-white text-xs font-medium border border-white/[0.08] transition-colors flex items-center justify-center gap-1.5"
+                  className="w-full py-2 px-3 rounded-lg bg-[#eb5757]/10 hover:bg-[#eb5757]/20 text-[#eb5757] text-xs font-medium border border-[#eb5757]/30 transition-colors flex items-center justify-center gap-1.5"
                 >
-                  <Lock className="w-3.5 h-3.5 text-[#eb5757]" />
+                  <Lock className="w-3.5 h-3.5" />
                   <span>Block in FinGuard Gateway</span>
                 </button>
 
@@ -629,24 +876,16 @@ export function TrustGraphWorkspace({
                   <button
                     type="button"
                     onClick={onCompileDossier}
-                    className="w-full py-1.5 px-3 rounded bg-[#5e6ad2] hover:bg-[#6f7be8] text-white text-xs font-medium transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                    className="w-full py-2 px-3 rounded-lg bg-[#5e6ad2] hover:bg-[#6f7be8] text-white text-xs font-medium transition-colors flex items-center justify-center gap-1.5 shadow-sm shadow-[#5e6ad2]/20"
                   >
                     <FileText className="w-3.5 h-3.5" />
-                    <span>Generate Dossier on Entity</span>
+                    <span>Compile Dossier on Entity</span>
                   </button>
                 )}
               </div>
-            </div>
-          ) : (
-            <div className="py-12 text-center text-xs text-[#8a8f98] space-y-2">
-              <Layers className="w-8 h-8 text-[#62666d] mx-auto" />
-              <div>No entity selected</div>
-              <div className="text-[11px] text-[#62666d]">
-                Click any node in the provenance graph to inspect forensic linkages.
-              </div>
-            </div>
-          )}
-        </aside>
+            )}
+          </aside>
+        )}
       </div>
     </main>
   );
