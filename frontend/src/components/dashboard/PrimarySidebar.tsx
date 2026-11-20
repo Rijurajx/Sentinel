@@ -32,6 +32,7 @@ interface PrimarySidebarProps {
   onOpenQuickCreate: () => void;
   onOpenSearch: () => void;
   onOpenProfileSettings?: () => void;
+  badges?: Record<string, string | number>;
 }
 
 export function PrimarySidebar({
@@ -42,6 +43,7 @@ export function PrimarySidebar({
   onOpenQuickCreate,
   onOpenSearch,
   onOpenProfileSettings,
+  badges = {},
 }: PrimarySidebarProps) {
   const router = useRouter();
   const { user, profile, workspaces, activeWorkspace, switchWorkspace, logout } = useAuth();
@@ -237,15 +239,17 @@ export function PrimarySidebar({
                     <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-[#f7f8f8]" : "text-[#8a8f98]"}`} />
                     {!isCollapsed && <span className="truncate">{item.label}</span>}
                   </div>
-                  {!isCollapsed && item.badge && (
+                  {!isCollapsed && (badges[item.id] !== undefined && badges[item.id] !== "" ? badges[item.id] : item.badge) && (
                     <span
                       className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${
                         isActive
-                          ? "bg-white/10 text-white"
+                          ? "bg-white/10 text-white font-medium"
+                          : typeof (badges[item.id] ?? item.badge) === "number" && Number(badges[item.id] ?? item.badge) > 0
+                          ? "bg-[#5e6ad2]/20 text-[#828fff] border border-[#5e6ad2]/30"
                           : "bg-white/[0.04] text-[#8a8f98]"
                       }`}
                     >
-                      {item.badge}
+                      {badges[item.id] !== undefined && badges[item.id] !== "" ? badges[item.id] : item.badge}
                     </span>
                   )}
                 </button>
@@ -275,6 +279,7 @@ export function PrimarySidebar({
                 {workspaceItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = activeView === item.id;
+                  const badgeVal = badges[item.id] !== undefined && badges[item.id] !== "" ? badges[item.id] : undefined;
                   return (
                     <button
                       key={item.id}
@@ -293,6 +298,19 @@ export function PrimarySidebar({
                         <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-[#f7f8f8]" : "text-[#8a8f98]"}`} />
                         {!isCollapsed && <span className="truncate">{item.label}</span>}
                       </div>
+                      {!isCollapsed && badgeVal && (
+                        <span
+                          className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${
+                            isActive
+                              ? "bg-white/10 text-white font-medium"
+                              : typeof badgeVal === "number" && Number(badgeVal) > 0
+                              ? "bg-[#5e6ad2]/20 text-[#828fff] border border-[#5e6ad2]/30"
+                              : "bg-white/[0.04] text-[#8a8f98]"
+                          }`}
+                        >
+                          {badgeVal}
+                        </span>
+                      )}
                     </button>
                   );
                 })}

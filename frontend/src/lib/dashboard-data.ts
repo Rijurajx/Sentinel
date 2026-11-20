@@ -64,6 +64,8 @@ export interface InvestigationItem {
     content: string;
     time: string;
   }>;
+  isRead?: boolean;
+  isSnoozed?: boolean;
 }
 
 export interface SupplierItem {
@@ -76,6 +78,8 @@ export interface SupplierItem {
   bankBranch: string;
   totalInvoiced: string;
   lastPaymentDate: string;
+  isRead?: boolean;
+  isSnoozed?: boolean;
 }
 
 export interface EvidenceItem {
@@ -98,6 +102,8 @@ export interface EvidenceItem {
     value: string;
     role: string;
   }>;
+  isRead?: boolean;
+  isSnoozed?: boolean;
 }
 
 export interface InvoiceItem {
@@ -122,6 +128,8 @@ export interface InvoiceItem {
     total: string;
   }>;
   associatedInvestigationId?: string;
+  isRead?: boolean;
+  isSnoozed?: boolean;
 }
 
 export interface EntityItem {
@@ -131,6 +139,8 @@ export interface EntityItem {
   riskLevel: "Critical" | "High" | "Medium" | "Verified";
   incidentCount: number;
   lastObserved: string;
+  isRead?: boolean;
+  isSnoozed?: boolean;
 }
 
 export interface InboxAlertItem {
@@ -145,6 +155,8 @@ export interface InboxAlertItem {
   amount?: string;
   payloadSnippet: string;
   recommendedAction: string;
+  isRead?: boolean;
+  isSnoozed?: boolean;
 }
 
 export interface ReviewItem {
@@ -174,6 +186,8 @@ export interface ReviewItem {
     passed: boolean;
     detail: string;
   }>;
+  isRead?: boolean;
+  isSnoozed?: boolean;
 }
 
 export interface DossierItem {
@@ -189,6 +203,8 @@ export interface DossierItem {
   provenanceEntitiesCount: number;
   status: "Active Brief" | "Submitted to Regulators" | "Archived";
   actionableRecommendations: string[];
+  isRead?: boolean;
+  isSnoozed?: boolean;
 }
 
 export const INITIAL_INVESTIGATIONS: InvestigationItem[] = [

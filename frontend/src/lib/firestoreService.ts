@@ -262,6 +262,13 @@ export function subscribeEntities(
   return () => {};
 }
 
+export async function updateInvestigationDoc(
+  workspaceId: string,
+  investigation: InvestigationItem
+): Promise<void> {
+  await addInvestigationDoc(workspaceId, investigation);
+}
+
 export async function updateSupplierDoc(
   workspaceId: string,
   supplier: SupplierItem
@@ -274,6 +281,13 @@ export async function updateEvidenceDoc(
   evidence: EvidenceItem
 ): Promise<void> {
   await addEvidenceDoc(workspaceId, evidence);
+}
+
+export async function updateEntityDoc(
+  workspaceId: string,
+  entity: EntityItem
+): Promise<void> {
+  await addEntityDoc(workspaceId, entity);
 }
 
 /* =========================================================================

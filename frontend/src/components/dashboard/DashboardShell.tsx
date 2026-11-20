@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { PrimarySidebar } from "./PrimarySidebar";
 import { ContextualMiddlePane } from "./ContextualMiddlePane";
@@ -42,6 +42,14 @@ import {
   addInvoiceDoc,
   addInboxAlertDoc,
   addReviewDoc,
+  updateInvestigationDoc,
+  updateSupplierDoc,
+  updateEvidenceDoc,
+  updateEntityDoc,
+  updateInvoiceDoc,
+  updateInboxAlertDoc,
+  updateReviewDoc,
+  updateDossierDoc,
 } from "@/lib/firestoreService";
 
 export function DashboardShell() {
@@ -388,6 +396,209 @@ export function DashboardShell() {
     );
   };
 
+  // Domain-wide Snooze toggler
+  const handleToggleSnooze = (domain: string, id: string) => {
+    if (domain === "inbox") {
+      setAlerts((prev) =>
+        prev.map((a) => {
+          if (a.id !== id) return a;
+          const updated = { ...a, isSnoozed: !a.isSnoozed };
+          updateInboxAlertDoc(activeWsId, updated);
+          return updated;
+        })
+      );
+    } else if (domain === "investigations") {
+      setInvestigations((prev) =>
+        prev.map((i) => {
+          if (i.id !== id) return i;
+          const updated = { ...i, isSnoozed: !i.isSnoozed };
+          updateInvestigationDoc(activeWsId, updated);
+          return updated;
+        })
+      );
+    } else if (domain === "finguard") {
+      setReviews((prev) =>
+        prev.map((r) => {
+          if (r.id !== id) return r;
+          const updated = { ...r, isSnoozed: !r.isSnoozed };
+          updateReviewDoc(activeWsId, updated);
+          return updated;
+        })
+      );
+    } else if (domain === "suppliers") {
+      setSuppliers((prev) =>
+        prev.map((s) => {
+          if (s.id !== id) return s;
+          const updated = { ...s, isSnoozed: !s.isSnoozed };
+          updateSupplierDoc(activeWsId, updated);
+          return updated;
+        })
+      );
+    } else if (domain === "invoices") {
+      setInvoices((prev) =>
+        prev.map((inv) => {
+          if (inv.id !== id) return inv;
+          const updated = { ...inv, isSnoozed: !inv.isSnoozed };
+          updateInvoiceDoc(activeWsId, updated);
+          return updated;
+        })
+      );
+    } else if (domain === "evidence" || domain === "scamshield") {
+      setEvidenceList((prev) =>
+        prev.map((e) => {
+          if (e.id !== id) return e;
+          const updated = { ...e, isSnoozed: !e.isSnoozed };
+          updateEvidenceDoc(activeWsId, updated);
+          return updated;
+        })
+      );
+    } else if (domain === "graph") {
+      setEntities((prev) =>
+        prev.map((ent) => {
+          if (ent.id !== id) return ent;
+          const updated = { ...ent, isSnoozed: !ent.isSnoozed };
+          updateEntityDoc(activeWsId, updated);
+          return updated;
+        })
+      );
+    } else if (domain === "reports") {
+      setDossiers((prev) =>
+        prev.map((d) => {
+          if (d.id !== id) return d;
+          const updated = { ...d, isSnoozed: !d.isSnoozed };
+          updateDossierDoc(activeWsId, updated);
+          return updated;
+        })
+      );
+    }
+  };
+
+  // Domain-wide Read state toggler
+  const handleToggleRead = (domain: string, id: string, forceReadState?: boolean) => {
+    if (domain === "inbox") {
+      setAlerts((prev) =>
+        prev.map((a) => {
+          if (a.id !== id) return a;
+          const newRead = forceReadState !== undefined ? forceReadState : !(a.isRead ?? (a.status !== "Action Required"));
+          const updated = { ...a, isRead: newRead };
+          updateInboxAlertDoc(activeWsId, updated);
+          return updated;
+        })
+      );
+    } else if (domain === "investigations") {
+      setInvestigations((prev) =>
+        prev.map((i) => {
+          if (i.id !== id) return i;
+          const newRead = forceReadState !== undefined ? forceReadState : !(i.isRead ?? (i.status !== "Under Review" && i.status !== "Blocked"));
+          const updated = { ...i, isRead: newRead };
+          updateInvestigationDoc(activeWsId, updated);
+          return updated;
+        })
+      );
+    } else if (domain === "finguard") {
+      setReviews((prev) =>
+        prev.map((r) => {
+          if (r.id !== id) return r;
+          const newRead = forceReadState !== undefined ? forceReadState : !(r.isRead ?? (r.status !== "Pending Dual-Auth"));
+          const updated = { ...r, isRead: newRead };
+          updateReviewDoc(activeWsId, updated);
+          return updated;
+        })
+      );
+    } else if (domain === "suppliers") {
+      setSuppliers((prev) =>
+        prev.map((s) => {
+          if (s.id !== id) return s;
+          const newRead = forceReadState !== undefined ? forceReadState : !(s.isRead ?? (s.status === "Verified"));
+          const updated = { ...s, isRead: newRead };
+          updateSupplierDoc(activeWsId, updated);
+          return updated;
+        })
+      );
+    } else if (domain === "invoices") {
+      setInvoices((prev) =>
+        prev.map((inv) => {
+          if (inv.id !== id) return inv;
+          const newRead = forceReadState !== undefined ? forceReadState : !(inv.isRead ?? (inv.status === "Cleared"));
+          const updated = { ...inv, isRead: newRead };
+          updateInvoiceDoc(activeWsId, updated);
+          return updated;
+        })
+      );
+    } else if (domain === "evidence" || domain === "scamshield") {
+      setEvidenceList((prev) =>
+        prev.map((e) => {
+          if (e.id !== id) return e;
+          const newRead = forceReadState !== undefined ? forceReadState : !(e.isRead ?? (e.status === "Verified"));
+          const updated = { ...e, isRead: newRead };
+          updateEvidenceDoc(activeWsId, updated);
+          return updated;
+        })
+      );
+    } else if (domain === "graph") {
+      setEntities((prev) =>
+        prev.map((ent) => {
+          if (ent.id !== id) return ent;
+          const newRead = forceReadState !== undefined ? forceReadState : !(ent.isRead ?? (ent.riskLevel === "Verified"));
+          const updated = { ...ent, isRead: newRead };
+          updateEntityDoc(activeWsId, updated);
+          return updated;
+        })
+      );
+    } else if (domain === "reports") {
+      setDossiers((prev) =>
+        prev.map((d) => {
+          if (d.id !== id) return d;
+          const newRead = forceReadState !== undefined ? forceReadState : !(d.isRead ?? (d.status !== "Active Brief"));
+          const updated = { ...d, isRead: newRead };
+          updateDossierDoc(activeWsId, updated);
+          return updated;
+        })
+      );
+    }
+  };
+
+  // Real-time Sidebar Notification Badges
+  const sidebarBadges: Record<string, string | number> = useMemo(() => {
+    const unreadAlerts = alerts.filter(
+      (a) => a.isSnoozed !== true && (a.isRead === false || a.status === "Action Required")
+    ).length;
+    const unreadInvs = investigations.filter(
+      (i) => i.isSnoozed !== true && (i.isRead === false || i.status === "Under Review" || i.status === "Blocked")
+    ).length;
+    const pendingReviews = reviews.filter(
+      (r) => r.isSnoozed !== true && (r.isRead === false || r.status === "Pending Dual-Auth")
+    ).length;
+    const alertSuppliers = suppliers.filter(
+      (s) => s.isSnoozed !== true && (s.isRead === false || s.status === "Discrepancy Detected" || s.riskLevel === "Critical")
+    ).length;
+    const alertInvoices = invoices.filter(
+      (inv) => inv.isSnoozed !== true && (inv.isRead === false || inv.status === "Payment Held" || inv.status === "Discrepancy")
+    ).length;
+    const alertEvidence = evidenceList.filter(
+      (e) => e.isSnoozed !== true && (e.isRead === false || e.status === "Flagged")
+    ).length;
+    const alertEntities = entities.filter(
+      (ent) => ent.isSnoozed !== true && (ent.isRead === false || ent.riskLevel === "Critical")
+    ).length;
+    const activeDossiers = dossiers.filter(
+      (d) => d.isSnoozed !== true && (d.isRead === false || d.status === "Active Brief")
+    ).length;
+
+    return {
+      command: (unreadAlerts > 0 || unreadInvs > 0 || alertInvoices > 0) ? "Active" : "",
+      inbox: unreadAlerts || "",
+      investigations: unreadInvs || "",
+      finguard: pendingReviews || "",
+      suppliers: alertSuppliers || "",
+      invoices: alertInvoices || "",
+      evidence: alertEvidence || "",
+      scamshield: alertEvidence || "",
+      graph: alertEntities || "",
+      reports: activeDossiers || "",
+    };
+  }, [alerts, investigations, reviews, suppliers, invoices, evidenceList, entities, dossiers]);
+
   if (isLoading || (!activeWorkspace && workspaces.length === 0)) {
     return (
       <div className="h-screen w-screen bg-[#08090a] flex items-center justify-center">
@@ -401,6 +612,7 @@ export function DashboardShell() {
       {/* 1. Left Sidebar — Global Navigation */}
       <PrimarySidebar
         activeView={activeView}
+        badges={sidebarBadges}
         onSelectView={(view) => {
           setActiveView(view);
           setIsEditingProfile(false);
@@ -444,46 +656,56 @@ export function DashboardShell() {
         selectedInvestigationId={selectedInvestigationId}
         onSelectInvestigation={(id) => {
           setSelectedInvestigationId(id);
+          handleToggleRead("investigations", id, true);
           setIsEditingProfile(false);
         }}
         selectedSupplierId={selectedSupplierId}
         onSelectSupplier={(id) => {
           setSelectedSupplierId(id);
+          handleToggleRead("suppliers", id, true);
           setIsEditingProfile(false);
         }}
         selectedEvidenceId={selectedEvidenceId}
         onSelectEvidence={(id) => {
           setSelectedEvidenceId(id);
+          handleToggleRead("evidence", id, true);
           setIsEditingProfile(false);
         }}
         selectedInvoiceId={selectedInvoiceId}
         onSelectInvoice={(id) => {
           setSelectedInvoiceId(id);
+          handleToggleRead("invoices", id, true);
           setIsEditingProfile(false);
         }}
         selectedEntityId={selectedEntityId}
         onSelectEntity={(id) => {
           setSelectedEntityId(id);
+          handleToggleRead("graph", id, true);
           setIsEditingProfile(false);
         }}
         selectedAlertId={selectedAlertId}
         onSelectAlert={(id) => {
           setSelectedAlertId(id);
+          handleToggleRead("inbox", id, true);
           setIsEditingProfile(false);
         }}
         selectedReviewId={selectedReviewId}
         onSelectReview={(id) => {
           setSelectedReviewId(id);
+          handleToggleRead("finguard", id, true);
           setIsEditingProfile(false);
         }}
         selectedDossierId={selectedDossierId}
         onSelectDossier={(id) => {
           setSelectedDossierId(id);
+          handleToggleRead("reports", id, true);
           setIsEditingProfile(false);
         }}
         isCollapsed={isMiddleCollapsed}
         onToggleCollapse={() => setIsMiddleCollapsed(true)}
         onOpenQuickCreate={handleOpenQuickCreate}
+        onToggleRead={handleToggleRead}
+        onToggleSnooze={handleToggleSnooze}
       />
 
       {/* 3. Right Pane — Dedicated Intelligence Workspace Engine */}
